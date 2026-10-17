@@ -15,3 +15,4 @@
 .form-message{min-height:20px;margin:12px 0 0;font-size:12px;color:var(--muted)}
 .form-message.success{color:#356c47}.form-message.error{color:var(--wine)}
 @media(max-width:760px){.mass-grid{grid-template-columns:1fr}.mass-list-wrap{padding:18px}}
+.delete-record{display:block;margin:12px 0 0 auto;border:1px solid var(--wine);border-radius:4px;background:transparent;color:var(--wine);padding:6px 10px;font:600 10px var(--sans);cursor:pointer;transition:.2s}.delete-record:hover{background:var(--wine);color:#fff}.delete-record:disabled{opacity:.55;cursor:wait}

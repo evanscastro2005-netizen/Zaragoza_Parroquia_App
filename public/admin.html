@@ -7,3 +7,56 @@
 <script>
 document.addEventListener('DOMContentLoaded',()=>{const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])),fmt=v=>v?new Date(v).toLocaleString('es-NI',{dateStyle:'long',timeStyle:'short'}):'Sin fecha',lista=document.getElementById('lista-misas'),cargar=async()=>{try{const r=await fetch('/api/misas');if(!r.ok)throw Error();const ms=await r.json();lista.innerHTML=ms.length?ms.map(m=>`<article class="mass-card"><div class="intention-top"><span class="type-badge">${esc(m.tipo_misa)}</span><time>${fmt(m.fecha_hora)}</time></div><h3>${esc(m.intencion_principal)}</h3><p><strong>Solicitante:</strong> ${esc(m.solicitante)}</p>${m.notas?`<p><strong>Observaciones:</strong> ${esc(m.notas)}</p>`:''}<span class="status-badge">${esc(m.estado||'Programada')}</span></article>`).join(''):'<div class="empty-state"><span>✦</span><h3>No hay Misas agendadas</h3><p>Registra la primera Misa especial con el formulario.</p></div>'}catch{lista.innerHTML='<div class="empty-state"><h3>No fue posible cargar la agenda</h3><p>Verifica la conexión con el servidor y la tabla misas en Supabase.</p></div>'}};const form=document.getElementById('form-misa'),msg=document.getElementById('mensaje-misa');form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Guardando...';try{const r=await fetch('/api/misas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))}),d=await r.json();if(!r.ok)throw Error(d.error);form.reset();msg.textContent='Misa agendada correctamente.';msg.className='form-message success';cargar()}catch(x){msg.textContent=x.message;msg.className='form-message error'}});document.getElementById('actualizar-misas').addEventListener('click',cargar);cargar();let ints=[];const li=document.getElementById('lista-intenciones'),pintar=()=>{const f=document.getElementById('filtro-fecha').value,t=document.getElementById('filtro-tipo').value,arr=ints.filter(i=>(!f||i.fecha===f)&&(!t||i.tipo===t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));li.innerHTML=arr.length?arr.map(i=>`<article class="tarjeta-intencion"><div class="intention-top"><span class="type-badge">${esc(i.tipo||'General')}</span><time>${i.fecha||'Sin fecha'}</time></div><h3>${esc(i.nombre)}</h3></article>`).join(''):'<div class="empty-state"><h3>No hay intenciones para mostrar</h3></div>'};fetch('/api/intenciones').then(r=>r.json()).then(d=>{ints=d;document.getElementById('total-intenciones').textContent=d.length;pintar()}).catch(()=>{li.innerHTML='<div class="empty-state"><h3>No fue posible cargar los datos</h3></div>'});document.getElementById('filtro-fecha').addEventListener('change',pintar);document.getElementById('filtro-tipo').addEventListener('change',pintar);document.getElementById('limpiar-filtros').addEventListener('click',()=>{document.getElementById('filtro-fecha').value='';document.getElementById('filtro-tipo').value='';pintar()});document.getElementById('imprimir-intenciones').addEventListener('click',()=>window.print())});
 </script></body></html>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const agregarBotones = (contenedor, registros, endpoint, ordenar) => {
+        const tarjetas = [...contenedor.children].filter(elemento => elemento.matches('article'));
+        const ordenados = [...registros].sort(ordenar);
+        tarjetas.forEach((tarjeta, indice) => {
+            const registro = ordenados[indice];
+            if (!registro || tarjeta.querySelector('.delete-record')) return;
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'delete-record';
+            boton.textContent = 'Eliminar';
+            boton.dataset.id = registro.id;
+            boton.dataset.endpoint = `${endpoint}/${encodeURIComponent(registro.id)}`;
+            boton.addEventListener('click', async () => {
+                if (!window.confirm('¿Estás seguro de eliminar este registro?')) return;
+                boton.disabled = true;
+                try {
+                    const respuesta = await fetch(boton.dataset.endpoint, { method: 'DELETE' });
+                    const resultado = await respuesta.json();
+                    if (!respuesta.ok) throw new Error(resultado.error || 'No se pudo eliminar el registro');
+                    const posicion = registros.findIndex(item => item.id === registro.id);
+                    if (posicion >= 0) registros.splice(posicion, 1);
+                    tarjeta.remove();
+                    if (endpoint === '/api/intenciones') {
+                        const total = document.getElementById('total-intenciones');
+                        total.textContent = Math.max(0, Number(total.textContent) - 1);
+                    }
+                    if (!contenedor.querySelector('article')) contenedor.innerHTML = '<div class="empty-state"><h3>No hay registros para mostrar</h3></div>';
+                } catch (error) {
+                    boton.disabled = false;
+                    window.alert(error.message);
+                }
+            });
+            tarjeta.appendChild(boton);
+        });
+    };
+    const cargarRegistros = async (id, endpoint, ordenar) => {
+        const contenedor = document.getElementById(id);
+        try {
+            const respuesta = await fetch(endpoint);
+            const registros = await respuesta.json();
+            const observar = () => agregarBotones(contenedor, registros, endpoint, ordenar);
+            new MutationObserver(observar).observe(contenedor, { childList: true });
+            observar();
+        } catch (error) { console.error('No fue posible preparar la eliminación:', error); }
+    };
+    await Promise.all([
+        cargarRegistros('lista-intenciones', '/api/intenciones', (a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999')),
+        cargarRegistros('lista-misas', '/api/misas', (a, b) => (a.fecha_hora || '').localeCompare(b.fecha_hora || ''))
+    ]);
+});
+</script>

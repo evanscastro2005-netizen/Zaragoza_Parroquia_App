@@ -76,9 +76,20 @@ app.post('/api/intenciones', async (req, res) => {
     }
 });
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-    console.log(`Servidor parroquial corriendo en el puerto ${PORT}`);
+// Eliminar una intención general por ID
+app.delete('/api/intenciones/:id', async (req, res) => {
+    try {
+        const { error } = await supabase
+            .from('intenciones')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) throw error;
+        res.status(200).json({ mensaje: 'Intención eliminada exitosamente' });
+    } catch (err) {
+        console.error('Error al eliminar intención:', err.message);
+        res.status(500).json({ error: 'Error al eliminar la intención' });
+    }
 });
 
 // Obtener la agenda de Misas especiales ordenada cronológicamente
@@ -126,4 +137,25 @@ app.post('/api/misas', async (req, res) => {
         console.error('Error al guardar Misa especial:', err.message);
         res.status(500).json({ error: 'Error al agendar la Misa especial' });
     }
+});
+
+// Eliminar una Misa especial por ID
+app.delete('/api/misas/:id', async (req, res) => {
+    try {
+        const { error } = await supabase
+            .from('misas')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) throw error;
+        res.status(200).json({ mensaje: 'Misa especial eliminada exitosamente' });
+    } catch (err) {
+        console.error('Error al eliminar Misa especial:', err.message);
+        res.status(500).json({ error: 'Error al eliminar la Misa especial' });
+    }
+});
+
+// Iniciar el servidor
+app.listen(PORT, () => {
+    console.log(`Servidor parroquial corriendo en el puerto ${PORT}`);
 });
