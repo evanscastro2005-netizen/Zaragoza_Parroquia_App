@@ -1,87 +1,39 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Intenciones - Parroquia</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
-    <div class="max-w-xl mx-auto p-6 bg-white shadow-lg rounded-2xl my-10 w-full">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-blue-900">Parroquia Nuestra Señora del Pilar</h1>
-            <p class="text-sm text-slate-500">Registro de Intenciones para la Eucaristía</p>
-        </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('form-intencion'); // Asegúrate que el <form> tenga id="form-intencion"
 
-        <form id="formIntencion" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-700">Nombre de quien solicita:</label>
-                <input type="text" id="nombre_solicitante" required class="mt-1 w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-slate-700">Tipo de Intención:</label>
-                <select id="tipo_intencion" class="mt-1 w-full p-2 border border-slate-300 rounded-lg bg-white">
-                    <option value="Difunto">✝️ Eterno Descanso (Difunto)</option>
-                    <option value="Salud">🕊️ Salud y Pronta Recuperación</option>
-                    <option value="Accion de Gracias">✨ Acción de Gracias</option>
-                    <option value="Cumpleaños">🎂 Cumpleaños / Aniversario</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-slate-700">Nombre(s) por el/los que se pide:</label>
-                <input type="text" id="nombre_intencion" required placeholder="Ej: Familia Pérez Gómez o Juan Pérez" class="mt-1 w-full p-2 border border-slate-300 rounded-lg">
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Fecha de la Misa:</label>
-                    <input type="date" id="fecha_misa" required class="mt-1 w-full p-2 border border-slate-300 rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700">Hora de la Misa:</label>
-                    <select id="hora_misa" class="mt-1 w-full p-2 border border-slate-300 rounded-lg bg-white">
-                        <option value="06:00 AM">06:00 AM</option>
-                        <option value="05:00 PM">05:00 PM (Vespertina)</option>
-                        <option value="07:00 PM">07:00 PM</option>
-                    </select>
-                </div>
-            </div>
-
-            <button type="submit" class="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition">
-                Registrar Intención
-            </button>
-        </form>
-        <div class="mt-6 text-center">
-            <a href="/admin.html" class="text-sm text-blue-600 hover:underline">Ir al Panel de Sacristía e Impresión →</a>
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('formIntencion').addEventListener('submit', async (e) => {
+    if (form) {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                nombre_solicitante: document.getElementById('nombre_solicitante').value,
-                tipo_intencion: document.getElementById('tipo_intencion').value,
-                nombre_intencion: document.getElementById('nombre_intencion').value,
-                fecha_misa: document.getElementById('fecha_misa').value,
-                hora_misa: document.getElementById('hora_misa').value
+
+            const payload = {
+                nombre: document.getElementById('nombre').value,
+                tipo: document.getElementById('tipo').value,
+                descripcion: document.getElementById('descripcion').value,
+                fecha: document.getElementById('fecha').value
             };
 
-            const res = await fetch('/api/intenciones', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            try {
+                // Usamos la ruta relativa "/api/intenciones"
+                const res = await fetch('/api/intenciones', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            if (res.ok) {
-                alert('¡Intención registrada con éxito!');
-                document.getElementById('formIntencion').reset();
-            } else {
-                alert('Error al registrar la intención.');
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('¡Intención registrada con éxito!');
+                    form.reset();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                console.error('Error de red:', err);
+                alert('No se pudo conectar con el servidor.');
             }
         });
-    </script>
-</body>
-</html>
+    }
+});
+</script>

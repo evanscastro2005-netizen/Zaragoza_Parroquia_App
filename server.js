@@ -1,79 +1,70 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
+const PORT = process.env.PORT || 3000;
 
+// Configuración de Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 1. Obtener intenciones
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// Servir automáticamente todos los archivos estáticos dentro de "public" (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Ruta principal -> entrega index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Ruta de administración / sacristía -> entrega admin.html
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// --- API ENDPOINTS (RUTAS CON SUPABASE) ---
+
+// Obtener todas las intenciones para el panel
 app.get('/api/intenciones', async (req, res) => {
     try {
-        const { fecha } = req.query;
-        let query = supabase.from('intenciones').select('*').order('created_at', { ascending: false });
-        
-        if (fecha) {
-            query = query.eq('fecha_misa', fecha);
-        }
+        const { data, error } = await supabase
+            .from('intenciones')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-        const { data, error } = await query;
         if (error) throw error;
         res.json(data);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Error al obtener intenciones:', err.message);
+        res.status(500).json({ error: 'Error al obtener intenciones' });
     }
 });
 
-// 2. Crear nueva intención
+// Crear una nueva intención
 app.post('/api/intenciones', async (req, res) => {
     try {
-        const { nombre_solicitante, tipo_intencion, nombre_intencion, fecha_misa, hora_misa } = req.body;
-        
-        const { data, error } = await supabase
-            .from('intenciones')
-            .insert([{ 
-                nombre_solicitante, 
-                tipo_intencion, 
-                nombre_intencion, 
-                fecha_misa, 
-                hora_misa, 
-                estado: 'Pendiente'
-            }])
-            .select();
-
-        if (error) throw error;
-        res.status(201).json({ message: 'Intención registrada con éxito', data });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// 3. Actualizar estado
-app.patch('/api/intenciones/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { estado } = req.body;
+        const { nombre, tipo, descripcion, fecha } = req.body;
 
         const { data, error } = await supabase
             .from('intenciones')
-            .update({ estado })
-            .eq('id', id)
-            .select();
+            .insert([{ nombre, tipo, descripcion, fecha }]);
 
         if (error) throw error;
-        res.json({ message: 'Estado actualizado con éxito', data });
+        res.status(201).json({ mensaje: 'Intención registrada exitosamente', data });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Error al guardar intención:', err.message);
+        res.status(500).json({ error: 'Error al registrar la intención' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
+// Iniciar el servidor
 app.listen(PORT, () => {
-    console.log(`Servidor parroquial corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor parroquial corriendo en el puerto ${PORT}`);
 });
