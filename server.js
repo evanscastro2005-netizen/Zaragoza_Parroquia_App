@@ -31,6 +31,18 @@ app.get('/admin', (req, res) => {
 
 // --- API ENDPOINTS (RUTAS CON SUPABASE) ---
 
+// SQL recomendado para crear la tabla en Supabase:
+// create table misas (
+//   id uuid default gen_random_uuid() primary key,
+//   solicitante text,
+//   tipo_misa text,
+//   intencion_principal text,
+//   fecha_hora timestamp,
+//   notas text,
+//   estado text default 'Programada',
+//   created_at timestamp default now()
+// );
+
 // Obtener todas las intenciones para el panel
 app.get('/api/intenciones', async (req, res) => {
     try {
@@ -67,4 +79,51 @@ app.post('/api/intenciones', async (req, res) => {
 // Iniciar el servidor
 app.listen(PORT, () => {
     console.log(`Servidor parroquial corriendo en el puerto ${PORT}`);
+});
+
+// Obtener la agenda de Misas especiales ordenada cronológicamente
+app.get('/api/misas', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('misas')
+            .select('*')
+            .order('fecha_hora', { ascending: true });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        console.error('Error al obtener Misas especiales:', err.message);
+        res.status(500).json({ error: 'Error al obtener la agenda de Misas especiales' });
+    }
+});
+
+// Registrar una nueva Misa especial
+app.post('/api/misas', async (req, res) => {
+    try {
+        const {
+            solicitante,
+            tipo_misa,
+            intencion_principal,
+            fecha_hora,
+            notas,
+            estado = 'Programada'
+        } = req.body;
+
+        if (!solicitante || !tipo_misa || !intencion_principal || !fecha_hora) {
+            return res.status(400).json({
+                error: 'Solicitante, tipo de Misa, intención y fecha son obligatorios'
+            });
+        }
+
+        const { data, error } = await supabase
+            .from('misas')
+            .insert([{ solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado }])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json({ mensaje: 'Misa especial agendada exitosamente', data });
+    } catch (err) {
+        console.error('Error al guardar Misa especial:', err.message);
+        res.status(500).json({ error: 'Error al agendar la Misa especial' });
+    }
 });
