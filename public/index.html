@@ -1,39 +1,26 @@
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('form-intencion'); // Asegúrate que el <form> tenga id="form-intencion"
-
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const payload = {
-                nombre: document.getElementById('nombre').value,
-                tipo: document.getElementById('tipo').value,
-                descripcion: document.getElementById('descripcion').value,
-                fecha: document.getElementById('fecha').value
-            };
-
-            try {
-                // Usamos la ruta relativa "/api/intenciones"
-                const res = await fetch('/api/intenciones', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    alert('¡Intención registrada con éxito!');
-                    form.reset();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (err) {
-                console.error('Error de red:', err);
-                alert('No se pudo conectar con el servidor.');
-            }
-        });
-    }
-});
-</script>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Parroquia Nuestra Señora de Zaragoza — intenciones de misa.">
+  <title>Intenciones de Misa | Parroquia Zaragoza</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header"><div class="container nav-wrap">
+    <a class="brand" href="index.html" aria-label="Inicio"><span class="brand-mark"><img src="assets/logo.png" alt="Logo de la parroquia"></span><span class="brand-copy"><strong>Parroquia Nuestra Señora<br>de Zaragoza</strong><small>Comunidad · Fe · Servicio</small></span></a>
+    <nav class="main-nav" aria-label="Navegación principal"><a class="active" href="index.html">Inicio</a><a href="#intenciones">Intenciones</a><a href="#horarios">Horarios de Misa</a><a class="admin-link" href="admin.html"><span class="lock-icon">⌑</span> Sacristía</a></nav>
+  </div></header>
+  <main>
+    <section class="hero"><div class="container hero-content"><p class="eyebrow">Unidos en oración</p><h1>Presenta tu intención<br><em>con esperanza.</em></h1><p class="hero-intro">Compartimos tus plegarias con nuestra comunidad y las presentamos con cariño en la celebración eucarística.</p><a class="text-link" href="#intenciones">Dejar una intención <span>↓</span></a></div><div class="hero-ornament" aria-hidden="true">✦</div></section>
+    <section class="intention-section container" id="intenciones"><div class="section-heading"><div><p class="eyebrow">Formulario de oración</p><h2>Registrar una intención</h2></div><p class="section-note">Tu solicitud será recibida por la oficina parroquial.</p></div>
+      <div class="form-card"><div class="card-intro"><span class="cross" aria-hidden="true">✝</span><div><h3>Una intención, una oración</h3><p>Completa los datos para que podamos acompañarte.</p></div></div>
+        <form id="form-intencion"><div class="form-grid"><div class="field"><label for="nombre">Nombre completo <span>*</span></label><input type="text" id="nombre" name="nombre" placeholder="Escribe tu nombre" required></div><div class="field"><label for="tipo">Tipo de intención <span>*</span></label><select id="tipo" name="tipo" required><option value="" disabled selected>Selecciona una opción</option><option value="Misa">Misa</option><option value="Difunto">Difunto</option><option value="Salud">Salud</option><option value="Acción de Gracias">Acción de Gracias</option></select></div><div class="field"><label for="fecha">Fecha deseada <span>*</span></label><input type="date" id="fecha" name="fecha" required></div><div class="field field-wide"><label for="descripcion">Detalles o mensaje <span>*</span></label><textarea id="descripcion" name="descripcion" rows="4" placeholder="Comparte brevemente el motivo de tu intención" required></textarea></div></div><div class="form-footer"><p><span class="required-mark">*</span> Campos obligatorios</p><button class="button button-primary" type="submit">Enviar intención <span>→</span></button></div></form>
+      </div></section>
+    <section class="hours-section" id="horarios"><div class="container hours-inner"><div><p class="eyebrow">Celebraciones</p><h2>Horarios de Misa</h2></div><div class="hours-list"><div><strong>Lunes a viernes</strong><span>6:00 p. m.</span></div><div><strong>Domingo</strong><span>8:00 a. m. · 10:00 a. m.</span></div></div></div></section>
+  </main><footer class="site-footer"><div class="container"><span>Parroquia Nuestra Señora de Zaragoza</span><span>© 2024 · Con fe y esperanza</span></div></footer>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => { const form = document.getElementById('form-intencion'); if (form) { form.addEventListener('submit', async (e) => { e.preventDefault(); const payload = { nombre: document.getElementById('nombre').value, tipo: document.getElementById('tipo').value, descripcion: document.getElementById('descripcion').value, fecha: document.getElementById('fecha').value }; try { const res = await fetch('/api/intenciones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if (res.ok) { alert('¡Intención registrada con éxito!'); form.reset(); } else { alert('Error: ' + data.error); } } catch (err) { console.error('Error de red:', err); alert('No se pudo conectar con el servidor.'); } }); } });
+  </script>
+</body></html>
