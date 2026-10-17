@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Sacristía - Intenciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 p-6">
+    <div class="max-w-5xl mx-auto bg-white p-6 shadow-lg rounded-2xl">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 no-print">
+            <h1 class="text-2xl font-bold text-blue-900">Panel de Sacristía - Listado de Misa</h1>
+            <div class="flex gap-3 mt-4 md:mt-0">
+                <input type="date" id="filtroFecha" class="p-2 border border-slate-300 rounded-lg">
+                <button onclick="cargarIntenciones()" class="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800">Filtrar</button>
+                <button onclick="window.print()" class="bg-emerald-700 text-white px-4 py-2 rounded-lg hover:bg-emerald-600">🖨️ Imprimir Lista</button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-200 text-slate-700 text-sm">
+                        <th class="p-3">Solicitante</th>
+                        <th class="p-3">Tipo</th>
+                        <th class="p-3">Intención (Nombre)</th>
+                        <th class="p-3">Misa</th>
+                        <th class="p-3">Estado</th>
+                        <th class="p-3 no-print">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaIntenciones" class="divide-y divide-slate-200 text-sm">
+                    <!-- Dinámico -->
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-6 no-print">
+            <a href="/" class="text-blue-600 hover:underline">← Volver al Formulario de Registro</a>
+        </div>
+    </div>
+
+    <script>
+        async function cargarIntenciones() {
+            const fecha = document.getElementById('filtroFecha').value;
+            let url = '/api/intenciones';
+            if (fecha) url += `?fecha=${fecha}`;
+
+            const res = await fetch(url);
+            const datos = await res.json();
+            const tbody = document.getElementById('tablaIntenciones');
+            tbody.innerHTML = '';
+
+            datos.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3">${item.nombre_solicitante}</td>
+                    <td class="p-3 font-semibold">${item.tipo_intencion}</td>
+                    <td class="p-3">${item.nombre_intencion}</td>
+                    <td class="p-3">${item.fecha_misa} (${item.hora_misa})</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${item.estado === 'Confirmado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${item.estado || 'Pendiente'}
+                        </span>
+                    </td>
+                    <td class="p-3 no-print">
+                        <button onclick="cambiarEstado('${item.id}', '${item.estado === 'Confirmado' ? 'Pendiente' : 'Confirmado'}')" class="text-xs bg-slate-200 hover:bg-slate-300 px-2 py-1 rounded">
+                            Cambiar Estado
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function cambiarEstado(id, nuevoEstado) {
+            await fetch(`/api/intenciones/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado: nuevoEstado })
+            });
+            cargarIntenciones();
+        }
+
+        document.getElementById('filtroFecha').value = new Date().toISOString().split('T')[0];
+        cargarIntenciones();
+    </script>
+</body>
+</html>
