@@ -264,3 +264,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.title = 'Secretaría Parroquial | Parroquia Zaragoza';
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const nombre = 'Parroquia Nuestra Señora del Pilar de Zaragoza';
+  const marca = document.querySelector('.brand-copy strong');
+  const pie = document.querySelector('.site-footer .container span');
+  const area = document.querySelector('.dashboard-heading .eyebrow');
+  if (marca) marca.innerHTML = `${nombre}<br>León - Nicaragua`;
+  if (pie) pie.textContent = `${nombre} · León - Nicaragua`;
+  if (area) area.textContent = 'Área privada · Secretaría Parroquial';
+  document.title = `Secretaría Parroquial | ${nombre}`;
+  document.querySelectorAll('.parish-notice-kicker').forEach(elemento => elemento.textContent = nombre);
+  document.querySelectorAll('.lock-icon, .stat-icon, .parish-notice-mark, .empty-state span, .button span').forEach(elemento => elemento.remove());
+});
+</script>
