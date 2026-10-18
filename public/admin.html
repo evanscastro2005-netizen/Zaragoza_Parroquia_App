@@ -61,6 +61,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const listaIntenciones = document.getElementById('lista-intenciones');
+    if (!listaIntenciones) return;
+    const actualizarResumen = async () => {
+        try {
+            const respuesta = await fetch('/api/intenciones');
+            const intenciones = await respuesta.json();
+            const ahora = new Date();
+            const pad = valor => String(valor).padStart(2, '0');
+            const hoy = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`;
+            const mes = hoy.slice(0, 7);
+            document.getElementById('total-intenciones').textContent = intenciones.length;
+            document.getElementById('total-hoy').textContent = intenciones.filter(item => item.fecha === hoy).length;
+            document.getElementById('total-mes').textContent = intenciones.filter(item => (item.fecha || '').startsWith(mes)).length;
+        } catch (error) { console.error('No fue posible actualizar el resumen:', error); }
+    };
+    new MutationObserver(cambios => {
+        if (cambios.some(cambio => cambio.removedNodes.length)) actualizarResumen();
+    }).observe(listaIntenciones, { childList: true });
+});
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const respuesta = await fetch('/api/intenciones');
