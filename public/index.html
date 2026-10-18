@@ -13,6 +13,13 @@
   <title>Parroquia Nuestra Señora del Pilar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css">
+  <script>
+    (() => {
+      const temaGuardado = localStorage.getItem('theme');
+      const modoOscuro = temaGuardado === 'dark' || (temaGuardado !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark-mode', modoOscuro);
+    })();
+  </script>
 </head>
 <body>
   <header class="site-header"><div class="container nav-wrap"><a class="brand" href="index.html" aria-label="Inicio"><span class="brand-mark"><img src="assets/logo.png" alt="Logo de la parroquia"></span><span class="brand-copy"><strong>Parroquia Nuestra Señora<br>de Zaragoza</strong><small>Comunidad · Fe · Servicio</small></span></a><nav class="main-nav" aria-label="Navegación principal"><a class="active" href="index.html">Inicio</a><a href="#intenciones">Intenciones</a><a href="#horarios">Horarios de Misa</a><a class="admin-link" href="admin.html"><span class="lock-icon">⌑</span> Sacristía</a></nav></div></header>
@@ -25,6 +32,40 @@
   </main><footer class="site-footer"><div class="container"><span>Parroquia Nuestra Señora de Zaragoza · León, Nicaragua</span><span>© 2024 · Evans Castro · Pastoral de comunicación</span></div></footer>
   <script>
   document.addEventListener('DOMContentLoaded', () => { const form = document.getElementById('form-intencion'); const fecha = document.getElementById('fecha'); const boton = form?.querySelector('button[type="submit"]'); let guardando = false; const hoy = new Date(); const fechaLocal = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`; if (fecha) fecha.min = fechaLocal; if (form) form.addEventListener('submit', async (e) => { e.preventDefault(); if (guardando) return; guardando = true; const textoOriginal = boton?.innerHTML || 'Enviar intención'; if (boton) { boton.disabled = true; boton.innerHTML = '<span class="submit-spinner" aria-hidden="true"></span>Guardando...'; } const payload = { nombre: document.getElementById('nombre').value.trim(), tipo: document.getElementById('tipo').value.trim(), descripcion: '', fecha: fecha.value.trim() }; try { const res = await fetch('/api/intenciones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if (!res.ok) throw new Error(data.message || data.error || 'No se pudo registrar la intención'); alert('¡Intención registrada con éxito!'); form.reset(); } catch (err) { guardando = false; if (boton) { boton.disabled = false; boton.innerHTML = textoOriginal; } console.error('Error al registrar intención:', err); alert(err.message || 'No se pudo conectar con el servidor.'); } }); });
+  </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const contenedor = document.querySelector('.nav-wrap');
+    if (!contenedor || document.getElementById('theme-toggle')) return;
+    const botonTema = document.createElement('button');
+    botonTema.className = 'theme-toggle';
+    botonTema.id = 'theme-toggle';
+    botonTema.type = 'button';
+    botonTema.innerHTML = '<span class="theme-icon" aria-hidden="true"></span><span class="theme-label"></span>';
+    contenedor.appendChild(botonTema);
+    const iconoTema = botonTema.querySelector('.theme-icon');
+    const etiquetaTema = botonTema.querySelector('.theme-label');
+    const actualizarBotonTema = (modoOscuro) => {
+      document.body.classList.toggle('dark-mode', modoOscuro);
+      botonTema.setAttribute('aria-pressed', String(modoOscuro));
+      botonTema.setAttribute('aria-label', modoOscuro ? 'Activar modo claro' : 'Activar modo oscuro');
+      iconoTema.innerHTML = modoOscuro ? '&#9728;' : '&#9790;';
+      etiquetaTema.textContent = modoOscuro ? 'Modo claro' : 'Modo oscuro';
+    };
+    actualizarBotonTema(document.documentElement.classList.contains('dark-mode'));
+    botonTema.addEventListener('click', () => {
+      const modoOscuro = !document.documentElement.classList.contains('dark-mode');
+      document.documentElement.classList.toggle('dark-mode', modoOscuro);
+      localStorage.setItem('theme', modoOscuro ? 'dark' : 'light');
+      actualizarBotonTema(modoOscuro);
+    });
+    window.addEventListener('storage', (evento) => {
+      if (evento.key !== 'theme') return;
+      const modoOscuro = evento.newValue === 'dark';
+      document.documentElement.classList.toggle('dark-mode', modoOscuro);
+      actualizarBotonTema(modoOscuro);
+    });
+  });
   </script>
 </body></html>
 <script>
