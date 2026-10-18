@@ -61,6 +61,57 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 <script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const agenda = document.getElementById('lista-misas');
+    const barra = document.querySelector('.mass-list-wrap .panel-toolbar');
+    if (!agenda || !barra) return;
+    const filtros = document.createElement('div');
+    filtros.className = 'filters mass-filters';
+    filtros.innerHTML = '<input type="date" id="filtro-misas-fecha" aria-label="Filtrar Misas por fecha"><input type="search" id="filtro-misas-nombre" placeholder="Buscar por nombre" aria-label="Buscar Misas por nombre"><button class="filter-clear" id="limpiar-filtros-misas" type="button">Limpiar</button>';
+    barra.appendChild(filtros);
+    let misas = [];
+    try {
+        const respuesta = await fetch('/api/misas');
+        misas = await respuesta.json();
+    } catch (error) { return; }
+    const filtrar = () => {
+        const fecha = document.getElementById('filtro-misas-fecha').value;
+        const nombre = document.getElementById('filtro-misas-nombre').value.trim().toLowerCase();
+        [...agenda.querySelectorAll('.mass-card')].forEach(tarjeta => {
+            const id = tarjeta.querySelector('.delete-record')?.dataset.id;
+            const misa = misas.find(item => item.id === id);
+            const coincideFecha = !fecha || (misa?.fecha_hora || '').startsWith(fecha);
+            const texto = `${misa?.solicitante || ''} ${misa?.intencion_principal || ''}`.toLowerCase();
+            tarjeta.hidden = !coincideFecha || (nombre && !texto.includes(nombre));
+        });
+    };
+    document.getElementById('filtro-misas-fecha').addEventListener('change', filtrar);
+    document.getElementById('filtro-misas-nombre').addEventListener('input', filtrar);
+    document.getElementById('limpiar-filtros-misas').addEventListener('click', () => { document.getElementById('filtro-misas-fecha').value = ''; document.getElementById('filtro-misas-nombre').value = ''; filtrar(); });
+    new MutationObserver(filtrar).observe(agenda, { childList: true });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const selectorFechaHora = document.getElementById('fecha-hora');
+    if (selectorFechaHora) selectorFechaHora.lang = 'en-US';
+    const convertirHora = (contenedor) => contenedor.querySelectorAll('time').forEach(hora => {
+        if (hora.dataset.formato12 === 'true') return;
+        hora.textContent = hora.textContent.replace(/\b(\d{1,2}):(\d{2})\b/, (_, horas, minutos) => {
+            const numero = Number(horas);
+            const periodo = numero >= 12 ? 'p. m.' : 'a. m.';
+            const hora12 = numero % 12 || 12;
+            return `${hora12}:${minutos} ${periodo}`;
+        });
+        hora.dataset.formato12 = 'true';
+    });
+    const agenda = document.getElementById('lista-misas');
+    if (!agenda) return;
+    new MutationObserver(() => convertirHora(agenda)).observe(agenda, { childList: true, subtree: true });
+    convertirHora(agenda);
+});
+</script>
+<script>
 (() => {
   const crearAviso = (mensaje, confirmacion) => new Promise(resolve => {
     const anterior = document.querySelector('.parish-notice-backdrop');
