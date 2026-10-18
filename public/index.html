@@ -74,3 +74,15 @@ document.addEventListener('DOMContentLoaded', () => {
   seccion.querySelector('.card-intro p').textContent = 'Escribe los datos para incluir las intenciones.';
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+  hero.querySelector('.eyebrow').textContent = 'SECRETARÍA PARROQUIAL';
+  const titulo = hero.querySelector('h1');
+  titulo.firstChild.textContent = 'Gestor de Intenciones';
+  titulo.querySelector('em').textContent = '';
+  hero.querySelector('.hero-intro').textContent = 'Ingreso de Intenciones, Salud, Difuntos y acción de gracias';
+  hero.querySelector('.text-link').firstChild.textContent = 'Registrar Intención ';
+});
+</script>
