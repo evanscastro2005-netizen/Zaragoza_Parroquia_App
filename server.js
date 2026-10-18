@@ -12,6 +12,14 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Las horas de la parroquia se capturan como hora local de Nicaragua (UTC-6)
+// y se almacenan como UTC para que Supabase no las desplace al consultar.
+const convertirHoraParroquialAUtc = (valor) => {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(valor)) return null;
+    const fecha = new Date(`${valor}:00-06:00`);
+    return Number.isNaN(fecha.getTime()) ? null : fecha;
+};
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
@@ -144,30 +152,32 @@ app.post('/api/misas', async (req, res) => {
             });
         }
 
-        // Verificar que no exista otra Misa dentro del mismo minuto agendado.
-        const inicioMinuto = new Date(`${fecha_hora}:00Z`);
-        if (Number.isNaN(inicioMinuto.getTime())) {
+        // La fecha/hora recibida representa la hora local de Nicaragua.
+        // Se normaliza a UTC antes de consultar y guardar para evitar desfases de 6 horas.
+        const fechaUtc = convertirHoraParroquialAUtc(fecha_hora);
+        if (!fechaUtc) {
             return res.status(400).json({ error: 'La fecha y hora de la Misa no son válidas' });
         }
-        inicioMinuto.setUTCMinutes(inicioMinuto.getUTCMinutes() + 1);
-        const siguienteMinuto = inicioMinuto.toISOString().slice(0, 16);
+
+        // Verificar fecha y hora exactas, sin permitir dos Misas en el mismo minuto.
+        const siguienteMinuto = new Date(fechaUtc.getTime() + 60 * 1000);
         const { data: misaExistente, error: disponibilidadError } = await supabase
             .from('misas')
             .select('id')
-            .gte('fecha_hora', fecha_hora)
-            .lt('fecha_hora', siguienteMinuto)
+            .gte('fecha_hora', fechaUtc.toISOString())
+            .lt('fecha_hora', siguienteMinuto.toISOString())
             .limit(1);
 
         if (disponibilidadError) throw disponibilidadError;
         if (misaExistente.length > 0) {
             return res.status(409).json({
-                error: 'Ya existe una Misa agendada para esa fecha y hora. Por favor, selecciona un horario diferente.'
+                error: 'Ya existe una Misa agendada para este mismo día y hora.'
             });
         }
 
         const { data, error } = await supabase
             .from('misas')
-            .insert([{ solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado }])
+            .insert([{ solicitante, tipo_misa, intencion_principal, fecha_hora: fechaUtc.toISOString(), notas, estado }])
             .select();
 
         if (error) throw error;
@@ -182,9 +192,14 @@ app.post('/api/misas', async (req, res) => {
 app.put('/api/misas/:id', async (req, res) => {
     try {
         const { solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado } = req.body;
+        const fechaUtc = convertirHoraParroquialAUtc(fecha_hora);
+        if (!fechaUtc) {
+            return res.status(400).json({ error: 'La fecha y hora de la Misa no son válidas' });
+        }
+
         const { data, error } = await supabase
             .from('misas')
-            .update({ solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado })
+            .update({ solicitante, tipo_misa, intencion_principal, fecha_hora: fechaUtc.toISOString(), notas, estado })
             .eq('id', req.params.id)
             .select();
 
