@@ -57,3 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.lock-icon, .hero-ornament, .cross, .stat-icon, .parish-notice-mark, .text-link span, .button span').forEach(elemento => elemento.remove());
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.main-nav a[href*="#intenciones"], .main-nav a[href*="#horarios"]').forEach(enlace => enlace.remove());
+  const copyright = document.querySelector('.site-footer .container span:last-child');
+  if (copyright) copyright.textContent = '© 2026 · Diseño y desarrollo web: Ing. Evans Castro';
+});
+</script>
