@@ -6,6 +6,36 @@
 <footer class="site-footer"><div class="container"><span>Parroquia Nuestra Señora de Zaragoza · León, Nicaragua</span><span>© 2024 · Evans Castro · Pastoral de comunicación</span></div></footer>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])),fmt=v=>v?new Date(v).toLocaleString('es-NI',{dateStyle:'long',timeStyle:'short'}):'Sin fecha',lista=document.getElementById('lista-misas'),cargar=async()=>{try{const r=await fetch('/api/misas');if(!r.ok)throw Error();const ms=await r.json();lista.innerHTML=ms.length?ms.map(m=>`<article class="mass-card mass-row"><div class="mass-row-date"><time>${fmt(m.fecha_hora)}</time></div><div class="mass-row-type"><span class="type-badge">${esc(m.tipo_misa)}</span><span class="status-badge">${esc(m.estado||'Programada')}</span></div><div class="mass-row-intention"><strong>${esc(m.intencion_principal)}</strong></div><div class="mass-row-applicant"><span class="mass-row-label">Solicitante</span>${esc(m.solicitante)}</div><div class="mass-row-notes">${m.notas?`<span class="mass-row-label">Observaciones</span>${esc(m.notas)}`:'<span class="mass-row-empty">Sin observaciones</span>'}</div></article>`).join(''):'<div class="empty-state"><span>✦</span><h3>No hay Misas agendadas</h3><p>Registra la primera Misa especial con el formulario.</p></div>'}catch{lista.innerHTML='<div class="empty-state"><h3>No fue posible cargar la agenda</h3><p>Verifica la conexión con el servidor y la tabla misas en Supabase.</p></div>'}};const form=document.getElementById('form-misa'),msg=document.getElementById('mensaje-misa');form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Guardando...';try{const r=await fetch('/api/misas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))}),d=await r.json();if(!r.ok)throw Error(d.error);form.reset();window.mostrarAvisoParroquial('La Misa especial fue agendada correctamente.');msg.textContent='';msg.className='form-message success';cargar()}catch(x){window.mostrarAvisoParroquial(x.message);msg.textContent='';msg.className='form-message error'}});document.getElementById('actualizar-misas').addEventListener('click',cargar);cargar();let ints=[];const li=document.getElementById('lista-intenciones'),pintar=()=>{const f=document.getElementById('filtro-fecha').value,t=document.getElementById('filtro-tipo').value,arr=ints.filter(i=>(!f||i.fecha===f)&&(!t||i.tipo===t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));li.innerHTML=arr.length?arr.map(i=>`<article class="tarjeta-intencion"><div class="intention-top"><span class="type-badge">${esc(i.tipo||'General')}</span><time>${i.fecha||'Sin fecha'}</time></div><h3>${esc(i.nombre)}</h3></article>`).join(''):'<div class="empty-state"><h3>No hay intenciones para mostrar</h3></div>'};fetch('/api/intenciones').then(r=>r.json()).then(d=>{ints=d;document.getElementById('total-intenciones').textContent=d.length;pintar()}).catch(()=>{li.innerHTML='<div class="empty-state"><h3>No fue posible cargar los datos</h3></div>'});document.getElementById('filtro-fecha').addEventListener('change',pintar);document.getElementById('filtro-tipo').addEventListener('change',pintar);document.getElementById('limpiar-filtros').addEventListener('click',()=>{document.getElementById('filtro-fecha').value='';document.getElementById('filtro-tipo').value='';pintar()});document.getElementById('imprimir-intenciones').addEventListener('click',()=>window.print())});
+ </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const contenedor = document.querySelector('.nav-wrap');
+  if (!contenedor || document.getElementById('theme-toggle')) return;
+  const botonTema = document.createElement('button');
+  botonTema.className = 'theme-toggle';
+  botonTema.id = 'theme-toggle';
+  botonTema.type = 'button';
+  botonTema.innerHTML = '<span class="theme-icon" aria-hidden="true"></span><span class="theme-label"></span>';
+  contenedor.appendChild(botonTema);
+  const actualizar = modoOscuro => {
+    document.documentElement.classList.toggle('dark-mode', modoOscuro);
+    document.body.classList.toggle('dark-mode', modoOscuro);
+    botonTema.setAttribute('aria-pressed', String(modoOscuro));
+    botonTema.setAttribute('aria-label', modoOscuro ? 'Activar modo claro' : 'Activar modo oscuro');
+    botonTema.querySelector('.theme-icon').innerHTML = modoOscuro ? '&#9728;' : '&#9790;';
+    botonTema.querySelector('.theme-label').textContent = modoOscuro ? 'Modo claro' : 'Modo oscuro';
+  };
+  const temaGuardado = localStorage.getItem('theme');
+  actualizar(temaGuardado === 'dark' || (temaGuardado !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  botonTema.addEventListener('click', () => {
+    const modoOscuro = !document.documentElement.classList.contains('dark-mode');
+    localStorage.setItem('theme', modoOscuro ? 'dark' : 'light');
+    actualizar(modoOscuro);
+  });
+  window.addEventListener('storage', evento => {
+    if (evento.key === 'theme') actualizar(evento.newValue === 'dark');
+  });
+});
 </script></body></html>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
