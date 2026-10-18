@@ -94,9 +94,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const selectorFechaHora = document.getElementById('fecha-hora');
-    if (selectorFechaHora) selectorFechaHora.lang = 'en-US';
+    if (selectorFechaHora) {
+        selectorFechaHora.type = 'date';
+        selectorFechaHora.removeAttribute('name');
+        const controlesHora = document.createElement('div');
+        controlesHora.className = 'time-picker-12';
+        controlesHora.innerHTML = '<select id="hora-misa" aria-label="Hora"><option value="">Hora</option>' + Array.from({length: 12}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('') + '</select><span>:</span><select id="minuto-misa" aria-label="Minutos"><option value="">Min</option><option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option></select><select id="periodo-misa" aria-label="AM o PM"><option value="">AM/PM</option><option value="AM">AM</option><option value="PM">PM</option></select>';
+        const horaOculta = document.createElement('input');
+        horaOculta.type = 'hidden';
+        horaOculta.name = 'fecha_hora';
+        horaOculta.id = 'fecha-hora-valor';
+        controlesHora.querySelectorAll('select').forEach(control => control.required = true);
+        selectorFechaHora.insertAdjacentElement('afterend', controlesHora);
+        controlesHora.insertAdjacentElement('afterend', horaOculta);
+        const sincronizarHora = () => {
+            const hora = Number(document.getElementById('hora-misa').value);
+            const minuto = document.getElementById('minuto-misa').value;
+            const periodo = document.getElementById('periodo-misa').value;
+            if (!selectorFechaHora.value || !hora || !minuto || !periodo) { horaOculta.value = ''; return; }
+            const hora24 = periodo === 'PM' ? (hora === 12 ? 12 : hora + 12) : (hora === 12 ? 0 : hora);
+            horaOculta.value = `${selectorFechaHora.value}T${String(hora24).padStart(2, '0')}:${minuto}`;
+        };
+        [selectorFechaHora, ...controlesHora.querySelectorAll('select')].forEach(control => control.addEventListener('change', sincronizarHora));
+    }
     const convertirHora = (contenedor) => contenedor.querySelectorAll('time').forEach(hora => {
-        if (hora.dataset.formato12 === 'true') return;
+        if (hora.dataset.formato12 === 'true' || /a\. m\.|p\. m\./i.test(hora.textContent)) return;
         hora.textContent = hora.textContent.replace(/\b(\d{1,2}):(\d{2})\b/, (_, horas, minutos) => {
             const numero = Number(horas);
             const periodo = numero >= 12 ? 'p. m.' : 'a. m.';
