@@ -20,3 +20,20 @@
   document.addEventListener('DOMContentLoaded', () => { const form = document.getElementById('form-intencion'); if (form) { form.addEventListener('submit', async (e) => { e.preventDefault(); const payload = { nombre: document.getElementById('nombre').value, tipo: document.getElementById('tipo').value, descripcion: '', fecha: document.getElementById('fecha').value }; try { const res = await fetch('/api/intenciones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if (res.ok) { alert('¡Intención registrada con éxito!'); form.reset(); } else { alert('Error: ' + data.error); } } catch (err) { console.error('Error de red:', err); alert('No se pudo conectar con el servidor.'); } }); } });
   </script>
 </body></html>
+<script>
+(() => {
+  window.alert = (mensaje) => {
+    const anterior = document.querySelector('.parish-notice-backdrop');
+    if (anterior) anterior.remove();
+    const fondo = document.createElement('div');
+    fondo.className = 'parish-notice-backdrop';
+    fondo.innerHTML = '<div class="parish-notice" role="alertdialog" aria-modal="true" aria-labelledby="parish-notice-title"><span class="parish-notice-mark">✦</span><div><p class="parish-notice-kicker">Parroquia Nuestra Señora de Zaragoza</p><h2 id="parish-notice-title">Aviso parroquial</h2><p class="parish-notice-message"></p><button class="button button-primary parish-notice-close" type="button">Entendido</button></div></div>';
+    fondo.querySelector('.parish-notice-message').textContent = mensaje;
+    const cerrar = () => fondo.remove();
+    fondo.querySelector('.parish-notice-close').addEventListener('click', cerrar);
+    fondo.addEventListener('click', evento => { if (evento.target === fondo) cerrar(); });
+    document.body.appendChild(fondo);
+    fondo.querySelector('.parish-notice-close').focus();
+  };
+})();
+</script>
