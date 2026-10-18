@@ -62,6 +62,64 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
+    document.querySelectorAll('#limpiar-filtros, #limpiar-filtros-misas').forEach(boton => boton.remove());
+    const escapar = valor => String(valor || '').replace(/[&<>"']/g, caracter => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[caracter]));
+    const registrosPorListado = [
+        { id: 'lista-intenciones', endpoint: '/api/intenciones', ordenar: (a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'), tipo: 'intencion' },
+        { id: 'lista-misas', endpoint: '/api/misas', ordenar: (a, b) => (a.fecha_hora || '').localeCompare(b.fecha_hora || ''), tipo: 'misa' }
+    ];
+    const abrirEditor = (registro, tipo) => new Promise(resolve => {
+        const esMisa = tipo === 'misa';
+        const fecha = esMisa ? (registro.fecha_hora || '').slice(0, 10) : (registro.fecha || '');
+        const hora24 = esMisa ? Number(((registro.fecha_hora || '').split('T')[1] || '12').split(':')[0]) : 12;
+        const hora12 = hora24 % 12 || 12;
+        const periodo = hora24 >= 12 ? 'PM' : 'AM';
+        const fondo = document.createElement('div');
+        fondo.className = 'parish-notice-backdrop edit-record-backdrop';
+        fondo.innerHTML = `<form class="edit-record-modal"><div class="parish-notice-mark">✦</div><p class="parish-notice-kicker">Parroquia Nuestra Señora de Zaragoza</p><h2>Editar ${esMisa ? 'Misa especial' : 'intención'}</h2><div class="edit-record-fields">${esMisa ? `<label>Solicitante<input name="solicitante" required value="${escapar(registro.solicitante)}"></label><label>Tipo de Misa<input name="tipo_misa" required value="${escapar(registro.tipo_misa)}"></label><label>Intención / Difunto<input name="intencion_principal" required value="${escapar(registro.intencion_principal)}"></label><label>Fecha<input name="fecha" type="date" required value="${fecha}"></label><div class="edit-time"><label>Hora<select name="hora">${Array.from({length:12},(_,i)=>`<option ${i+1===hora12?'selected':''}>${i+1}</option>`).join('')}</select></label><label>Minutos<select name="minuto"><option>00</option><option>15</option><option>30</option><option>45</option></select></label><label>AM / PM<select name="periodo"><option ${periodo==='AM'?'selected':''}>AM</option><option ${periodo==='PM'?'selected':''}>PM</option></select></label></div><label>Observaciones<textarea name="notas">${escapar(registro.notas)}</textarea></label>` : `<label>Nombre completo<input name="nombre" required value="${escapar(registro.nombre)}"></label><label>Tipo de intención<select name="tipo"><option ${registro.tipo==='Difunto'?'selected':''}>Difunto</option><option ${registro.tipo==='Salud'?'selected':''}>Salud</option><option ${registro.tipo==='Acción de Gracias'?'selected':''}>Acción de Gracias</option></select></label><label>Fecha<input name="fecha" type="date" required value="${fecha}"></label>`}</div><div class="parish-notice-actions"><button type="button" class="button button-outline edit-cancel">Cancelar</button><button type="submit" class="button button-primary">Guardar cambios</button></div></form>`;
+        const cerrar = resultado => { fondo.remove(); resolve(resultado); };
+        fondo.querySelector('.edit-cancel').addEventListener('click', () => cerrar(false));
+        fondo.addEventListener('click', evento => { if (evento.target === fondo) cerrar(false); });
+        fondo.querySelector('form').addEventListener('submit', async evento => {
+            evento.preventDefault();
+            const datos = Object.fromEntries(new FormData(evento.target));
+            if (esMisa) { const h = Number(datos.hora); const h24 = datos.periodo === 'PM' ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h); datos.fecha_hora = `${datos.fecha}T${String(h24).padStart(2, '0')}:${datos.minuto}`; delete datos.fecha; delete datos.hora; delete datos.minuto; delete datos.periodo; datos.estado = registro.estado || 'Programada'; }
+            try { const respuesta = await fetch(`${esMisa ? '/api/misas' : '/api/intenciones'}/${encodeURIComponent(registro.id)}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(datos) }); const resultado = await respuesta.json(); if (!respuesta.ok) throw new Error(resultado.error || 'No se pudo guardar'); cerrar(true); window.location.reload(); } catch (error) { window.mostrarAvisoParroquial(error.message); }
+        });
+        document.body.appendChild(fondo);
+        fondo.querySelector('input, select').focus();
+    });
+    const preparar = async configuracion => {
+        const contenedor = document.getElementById(configuracion.id);
+        if (!contenedor) return;
+        try {
+            const respuesta = await fetch(configuracion.endpoint);
+            const registros = await respuesta.json();
+            const decorar = () => {
+                const ordenados = [...registros].sort(configuracion.ordenar);
+                [...contenedor.querySelectorAll('article')].forEach((tarjeta, indice) => {
+                    const idExistente = tarjeta.querySelector('.delete-record')?.dataset.id;
+                    const registro = idExistente ? registros.find(item => item.id === idExistente) : ordenados[indice];
+                    if (!registro) return;
+                    let eliminar = tarjeta.querySelector('.delete-record');
+                    if (eliminar) { eliminar.classList.add('action-delete'); }
+                    if (!eliminar) { eliminar = document.createElement('button'); eliminar.type='button'; eliminar.className='delete-record action-delete'; eliminar.textContent='Eliminar'; tarjeta.appendChild(eliminar); eliminar.addEventListener('click', async () => { if (!await window.confirmarEliminacion('¿Estás seguro de eliminar este registro?')) return; const borrado = await fetch(`${configuracion.endpoint}/${encodeURIComponent(registro.id)}`, {method:'DELETE'}); if (!borrado.ok) { const error = await borrado.json(); window.mostrarAvisoParroquial(error.error || 'No se pudo eliminar el registro'); return; } registros.splice(registros.findIndex(item => item.id === registro.id), 1); tarjeta.remove(); }); }
+                    eliminar.dataset.id = registro.id;
+                    let editar = tarjeta.querySelector('.edit-record');
+                    if (editar) return;
+                    editar = document.createElement('button'); editar.type='button'; editar.className='edit-record'; editar.textContent='Editar'; editar.dataset.id=registro.id; tarjeta.appendChild(editar);
+                    editar.addEventListener('click', () => abrirEditor(registro, configuracion.tipo));
+                });
+            };
+            new MutationObserver(decorar).observe(contenedor, { childList: true, subtree: true });
+            decorar();
+        } catch (error) { console.error('No fue posible preparar la edición:', error); }
+    };
+    await Promise.all(registrosPorListado.map(preparar));
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
     const agenda = document.getElementById('lista-misas');
     const barra = document.querySelector('.mass-list-wrap .panel-toolbar');
     if (!agenda || !barra) return;

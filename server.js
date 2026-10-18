@@ -92,6 +92,24 @@ app.delete('/api/intenciones/:id', async (req, res) => {
     }
 });
 
+// Editar una intención general por ID
+app.put('/api/intenciones/:id', async (req, res) => {
+    try {
+        const { nombre, tipo, descripcion, fecha } = req.body;
+        const { data, error } = await supabase
+            .from('intenciones')
+            .update({ nombre, tipo, descripcion, fecha })
+            .eq('id', req.params.id)
+            .select();
+
+        if (error) throw error;
+        res.status(200).json({ mensaje: 'Intención actualizada exitosamente', data });
+    } catch (err) {
+        console.error('Error al editar intención:', err.message);
+        res.status(500).json({ error: 'Error al editar la intención' });
+    }
+});
+
 // Obtener la agenda de Misas especiales ordenada cronológicamente
 app.get('/api/misas', async (req, res) => {
     try {
@@ -136,6 +154,24 @@ app.post('/api/misas', async (req, res) => {
     } catch (err) {
         console.error('Error al guardar Misa especial:', err.message);
         res.status(500).json({ error: 'Error al agendar la Misa especial' });
+    }
+});
+
+// Editar una Misa especial por ID
+app.put('/api/misas/:id', async (req, res) => {
+    try {
+        const { solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado } = req.body;
+        const { data, error } = await supabase
+            .from('misas')
+            .update({ solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado })
+            .eq('id', req.params.id)
+            .select();
+
+        if (error) throw error;
+        res.status(200).json({ mensaje: 'Misa especial actualizada exitosamente', data });
+    } catch (err) {
+        console.error('Error al editar Misa especial:', err.message);
+        res.status(500).json({ error: 'Error al editar la Misa especial' });
     }
 });
 

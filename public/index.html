@@ -29,7 +29,7 @@
     fondo.className = 'parish-notice-backdrop';
     fondo.innerHTML = '<div class="parish-notice" role="alertdialog" aria-modal="true" aria-labelledby="parish-notice-title"><span class="parish-notice-mark">✦</span><div><p class="parish-notice-kicker">Parroquia Nuestra Señora de Zaragoza</p><h2 id="parish-notice-title">Aviso parroquial</h2><p class="parish-notice-message"></p><button class="button button-primary parish-notice-close" type="button">Entendido</button></div></div>';
     fondo.querySelector('.parish-notice-message').textContent = mensaje;
-    const cerrar = () => fondo.remove();
+    const cerrar = () => { fondo.remove(); if (String(mensaje).toLowerCase().includes('intenci')) window.location.href = '/admin'; };
     fondo.querySelector('.parish-notice-close').addEventListener('click', cerrar);
     fondo.addEventListener('click', evento => { if (evento.target === fondo) cerrar(); });
     document.body.appendChild(fondo);
