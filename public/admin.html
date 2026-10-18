@@ -247,6 +247,15 @@ document.addEventListener('DOMContentLoaded', () => {
             horaOculta.value = `${selectorFechaHora.value}T${String(hora24).padStart(2, '0')}:${minuto}`;
         };
         [selectorFechaHora, ...controlesHora.querySelectorAll('select')].forEach(control => control.addEventListener('change', sincronizarHora));
+        const formularioMisa = document.getElementById('form-misa');
+        formularioMisa.addEventListener('submit', evento => {
+            sincronizarHora();
+            if (!horaOculta.value) {
+                evento.preventDefault();
+                evento.stopImmediatePropagation();
+                window.mostrarAvisoParroquial('Selecciona la fecha, hora, minutos y el periodo AM/PM antes de agendar la Misa.');
+            }
+        }, true);
     }
     const convertirHora = (contenedor) => contenedor.querySelectorAll('time').forEach(hora => {
         if (hora.dataset.formato12 === 'true' || /a\. m\.|p\. m\./i.test(hora.textContent)) return;
@@ -272,7 +281,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fondo = document.createElement('div');
     fondo.className = 'parish-notice-backdrop';
     fondo.innerHTML = `<div class="parish-notice ${confirmacion ? 'parish-confirm' : ''}" role="${confirmacion ? 'dialog' : 'alertdialog'}" aria-modal="true"><span class="parish-notice-mark">✦</span><div><p class="parish-notice-kicker">Parroquia Nuestra Señora de Zaragoza</p><h2>${confirmacion ? 'Confirmar acción' : 'Aviso parroquial'}</h2><p class="parish-notice-message"></p><div class="parish-notice-actions">${confirmacion ? '<button class="button button-outline parish-notice-cancel" type="button">Cancelar</button>' : ''}<button class="button button-primary parish-notice-close" type="button">${confirmacion ? 'Sí, eliminar' : 'Entendido'}</button></div></div></div>`;
-    fondo.querySelector('.parish-notice-message').textContent = mensaje;
+    const mensajeVisible = String(mensaje).includes('Ya existe una Misa') ? 'El horario seleccionado ya está reservado. Por favor elige otro horario.' : mensaje;
+    fondo.querySelector('.parish-notice-message').textContent = mensajeVisible;
     const cerrar = resultado => { fondo.remove(); resolve(resultado); };
     fondo.querySelector('.parish-notice-close').addEventListener('click', () => cerrar(true));
     const cancelar = fondo.querySelector('.parish-notice-cancel');
