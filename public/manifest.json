@@ -1,0 +1,25 @@
+{
+  "name": "Parroquia Nuestra Señora del Pilar de Zaragoza",
+  "short_name": "Parroquia Zaragoza",
+  "description": "Aplicación parroquial para intenciones de oración y agenda pastoral.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff7f3",
+  "theme_color": "#4f1d22",
+  "lang": "es-NI",
+  "icons": [
+    {
+      "src": "/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
