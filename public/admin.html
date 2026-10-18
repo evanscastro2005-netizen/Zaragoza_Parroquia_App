@@ -213,3 +213,12 @@ document.addEventListener('DOMContentLoaded', () => {
   window.alert = window.mostrarAvisoParroquial;
 })();
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const enlace = document.querySelector('.admin-link');
+  const area = document.querySelector('.dashboard-heading .eyebrow');
+  if (enlace) enlace.innerHTML = '<span class="lock-icon">🔐</span> Secretaría Parroquial';
+  if (area) area.textContent = 'Área privada · Secretaría Parroquial';
+  document.title = 'Secretaría Parroquial | Parroquia Zaragoza';
+});
+</script>
