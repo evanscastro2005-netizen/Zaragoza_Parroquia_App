@@ -64,3 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (copyright) copyright.textContent = '© 2026 · Diseño y desarrollo web: Ing. Evans Castro';
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const seccion = document.querySelector('.intention-section');
+  if (!seccion) return;
+  seccion.querySelector('.section-heading .eyebrow').textContent = 'OFICINA PARROQUIAL';
+  seccion.querySelector('.section-heading h2').textContent = 'Solicitud de Intenciones';
+  seccion.querySelector('.card-intro h3').textContent = 'Registra tu intención';
+  seccion.querySelector('.card-intro p').textContent = 'Escribe los datos para incluir las intenciones.';
+});
+</script>
