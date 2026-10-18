@@ -156,6 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         fondo.querySelector('form').addEventListener('submit', async evento => {
             evento.preventDefault();
             const datos = Object.fromEntries(new FormData(evento.target));
+            Object.keys(datos).forEach(clave => { if (typeof datos[clave] === 'string') datos[clave] = datos[clave].trim(); });
             if (esMisa) { const h = Number(datos.hora); const h24 = datos.periodo === 'PM' ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h); datos.fecha_hora = `${datos.fecha}T${String(h24).padStart(2, '0')}:${datos.minuto}`; delete datos.fecha; delete datos.hora; delete datos.minuto; delete datos.periodo; datos.estado = registro.estado || 'Programada'; }
             try { const respuesta = await fetch(`${esMisa ? '/api/misas' : '/api/intenciones'}/${encodeURIComponent(registro.id)}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(datos) }); const resultado = await respuesta.json(); if (!respuesta.ok) throw new Error(resultado.error || 'No se pudo guardar'); cerrar(true); window.location.reload(); } catch (error) { window.mostrarAvisoParroquial(error.message); }
         });
@@ -330,5 +331,36 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
   const actualizar = document.getElementById('actualizar-misas');
   if (actualizar) actualizar.remove();
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('form-misa');
+  const boton = form?.querySelector('button[type="submit"]');
+  const mensaje = document.getElementById('mensaje-misa');
+  const fecha = document.getElementById('fecha-hora');
+  let guardando = false;
+  const hoy = new Date();
+  const fechaLocal = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  const textoOriginal = boton?.innerHTML || 'Agendar Misa';
+  const restaurarBoton = () => {
+    guardando = false;
+    if (boton) { boton.disabled = false; boton.innerHTML = textoOriginal; }
+  };
+
+  if (fecha) fecha.min = fechaLocal;
+  if (!form || !boton) return;
+
+  form.addEventListener('submit', evento => {
+    if (guardando) { evento.preventDefault(); evento.stopImmediatePropagation(); return; }
+    guardando = true;
+    form.querySelectorAll('input[type="text"], textarea').forEach(campo => { campo.value = campo.value.trim(); });
+    boton.disabled = true;
+    boton.innerHTML = '<span class="submit-spinner" aria-hidden="true"></span>Guardando...';
+  }, true);
+
+  if (mensaje) new MutationObserver(() => {
+    if (mensaje.classList.contains('error')) restaurarBoton();
+  }).observe(mensaje, { attributes: true, attributeFilter: ['class'] });
 });
 </script>

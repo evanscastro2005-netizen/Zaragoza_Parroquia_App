@@ -15,14 +15,61 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Las horas de la parroquia se capturan como hora local de Nicaragua (UTC-6)
 // y se almacenan como UTC para que Supabase no las desplace al consultar.
 const convertirHoraParroquialAUtc = (valor) => {
-    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(valor)) return null;
+    const partes = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(valor);
+    if (!partes) return null;
+    const [ , anio, mes, dia, hora, minuto ] = partes.map(Number);
+    const calendario = new Date(Date.UTC(anio, mes - 1, dia));
+    if (calendario.getUTCFullYear() !== anio || calendario.getUTCMonth() !== mes - 1 || calendario.getUTCDate() !== dia || hora > 23 || minuto > 59) return null;
     const fecha = new Date(`${valor}:00-06:00`);
-    return Number.isNaN(fecha.getTime()) ? null : fecha;
+    if (Number.isNaN(fecha.getTime())) return null;
+    return fecha;
+};
+
+// Sanitización defensiva: se eliminan etiquetas HTML, caracteres angulares y
+// caracteres de control antes de procesar cualquier texto recibido.
+const sanitizarTexto = (valor) => typeof valor === 'string'
+    ? valor.replace(/<[^>]*>/g, '').replace(/[<>]/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim()
+    : valor;
+
+const sanitizarEntrada = (valor) => {
+    if (Array.isArray(valor)) return valor.map(sanitizarEntrada);
+    if (valor && typeof valor === 'object') {
+        return Object.fromEntries(Object.entries(valor).map(([clave, contenido]) => [clave, sanitizarEntrada(contenido)]));
+    }
+    return sanitizarTexto(valor);
+};
+
+const campoValido = (valor) => typeof valor === 'string' && valor.trim().length > 0;
+const responderError = (res, status, message) => res.status(status).json({ success: false, message, error: message });
+
+const existeMisaEnHorario = async (fechaUtc, idExcluir = null) => {
+    const siguienteMinuto = new Date(fechaUtc.getTime() + 60 * 1000);
+    let consulta = supabase
+        .from('misas')
+        .select('id')
+        .gte('fecha_hora', fechaUtc.toISOString())
+        .lt('fecha_hora', siguienteMinuto.toISOString())
+        .limit(1);
+
+    if (idExcluir) consulta = consulta.neq('id', idExcluir);
+    const { data, error } = await consulta;
+    if (error) throw error;
+    return data.length > 0;
 };
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && Object.prototype.hasOwnProperty.call(err, 'body')) {
+        return responderError(res, 400, 'El cuerpo de la solicitud no contiene un JSON válido');
+    }
+    next(err);
+});
+app.use((req, res, next) => {
+    if (req.body && typeof req.body === 'object') req.body = sanitizarEntrada(req.body);
+    next();
+});
 
 // Servir automáticamente todos los archivos estáticos dentro de "public" (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -63,7 +110,7 @@ app.get('/api/intenciones', async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error('Error al obtener intenciones:', err.message);
-        res.status(500).json({ error: 'Error al obtener intenciones' });
+        responderError(res, 500, 'Error al obtener intenciones');
     }
 });
 
@@ -72,15 +119,19 @@ app.post('/api/intenciones', async (req, res) => {
     try {
         const { nombre, tipo, descripcion, fecha } = req.body;
 
+        if (!campoValido(nombre) || !campoValido(tipo) || !campoValido(fecha)) {
+            return responderError(res, 400, 'Nombre, tipo y fecha son obligatorios y no pueden estar vacíos');
+        }
+
         const { data, error } = await supabase
             .from('intenciones')
-            .insert([{ nombre, tipo, descripcion, fecha }]);
+            .insert([{ nombre: nombre.trim(), tipo: tipo.trim(), descripcion: campoValido(descripcion) ? descripcion.trim() : '', fecha: fecha.trim() }]);
 
         if (error) throw error;
         res.status(201).json({ mensaje: 'Intención registrada exitosamente', data });
     } catch (err) {
         console.error('Error al guardar intención:', err.message);
-        res.status(500).json({ error: 'Error al registrar la intención' });
+        responderError(res, 500, 'Error al registrar la intención');
     }
 });
 
@@ -96,7 +147,7 @@ app.delete('/api/intenciones/:id', async (req, res) => {
         res.status(200).json({ mensaje: 'Intención eliminada exitosamente' });
     } catch (err) {
         console.error('Error al eliminar intención:', err.message);
-        res.status(500).json({ error: 'Error al eliminar la intención' });
+        responderError(res, 500, 'Error al eliminar la intención');
     }
 });
 
@@ -104,9 +155,13 @@ app.delete('/api/intenciones/:id', async (req, res) => {
 app.put('/api/intenciones/:id', async (req, res) => {
     try {
         const { nombre, tipo, descripcion, fecha } = req.body;
+        if (!campoValido(nombre) || !campoValido(tipo) || !campoValido(fecha)) {
+            return responderError(res, 400, 'Nombre, tipo y fecha son obligatorios y no pueden estar vacíos');
+        }
+
         const { data, error } = await supabase
             .from('intenciones')
-            .update({ nombre, tipo, descripcion, fecha })
+            .update({ nombre: nombre.trim(), tipo: tipo.trim(), descripcion: campoValido(descripcion) ? descripcion.trim() : '', fecha: fecha.trim() })
             .eq('id', req.params.id)
             .select();
 
@@ -114,7 +169,7 @@ app.put('/api/intenciones/:id', async (req, res) => {
         res.status(200).json({ mensaje: 'Intención actualizada exitosamente', data });
     } catch (err) {
         console.error('Error al editar intención:', err.message);
-        res.status(500).json({ error: 'Error al editar la intención' });
+        responderError(res, 500, 'Error al editar la intención');
     }
 });
 
@@ -130,7 +185,7 @@ app.get('/api/misas', async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error('Error al obtener Misas especiales:', err.message);
-        res.status(500).json({ error: 'Error al obtener la agenda de Misas especiales' });
+        responderError(res, 500, 'Error al obtener la agenda de Misas especiales');
     }
 });
 
@@ -146,45 +201,32 @@ app.post('/api/misas', async (req, res) => {
             estado = 'Programada'
         } = req.body;
 
-        if (!solicitante || !tipo_misa || !intencion_principal || !fecha_hora) {
-            return res.status(400).json({
-                error: 'Solicitante, tipo de Misa, intención y fecha son obligatorios'
-            });
+        if (!campoValido(solicitante) || !campoValido(tipo_misa) || !campoValido(intencion_principal) || !campoValido(fecha_hora)) {
+            return responderError(res, 400, 'Solicitante, tipo de Misa, intención y fecha son obligatorios');
         }
 
         // La fecha/hora recibida representa la hora local de Nicaragua.
         // Se normaliza a UTC antes de consultar y guardar para evitar desfases de 6 horas.
         const fechaUtc = convertirHoraParroquialAUtc(fecha_hora);
         if (!fechaUtc) {
-            return res.status(400).json({ error: 'La fecha y hora de la Misa no son válidas' });
+            return responderError(res, 400, 'La fecha y hora de la Misa no son válidas');
         }
 
-        // Verificar fecha y hora exactas, sin permitir dos Misas en el mismo minuto.
-        const siguienteMinuto = new Date(fechaUtc.getTime() + 60 * 1000);
-        const { data: misaExistente, error: disponibilidadError } = await supabase
-            .from('misas')
-            .select('id')
-            .gte('fecha_hora', fechaUtc.toISOString())
-            .lt('fecha_hora', siguienteMinuto.toISOString())
-            .limit(1);
-
-        if (disponibilidadError) throw disponibilidadError;
-        if (misaExistente.length > 0) {
-            return res.status(409).json({
-                error: 'Ya existe una Misa agendada para este mismo día y hora.'
-            });
+        // Verificar fecha y hora exactas antes de insertar.
+        if (await existeMisaEnHorario(fechaUtc)) {
+            return responderError(res, 409, 'Ya existe una Misa agendada para este mismo día y hora.');
         }
 
         const { data, error } = await supabase
             .from('misas')
-            .insert([{ solicitante, tipo_misa, intencion_principal, fecha_hora: fechaUtc.toISOString(), notas, estado }])
+            .insert([{ solicitante: solicitante.trim(), tipo_misa: tipo_misa.trim(), intencion_principal: intencion_principal.trim(), fecha_hora: fechaUtc.toISOString(), notas: campoValido(notas) ? notas.trim() : '', estado: campoValido(estado) ? estado.trim() : 'Programada' }])
             .select();
 
         if (error) throw error;
         res.status(201).json({ mensaje: 'Misa especial agendada exitosamente', data });
     } catch (err) {
         console.error('Error al guardar Misa especial:', err.message);
-        res.status(500).json({ error: 'Error al agendar la Misa especial' });
+        responderError(res, 500, 'Error al agendar la Misa especial');
     }
 });
 
@@ -192,14 +234,21 @@ app.post('/api/misas', async (req, res) => {
 app.put('/api/misas/:id', async (req, res) => {
     try {
         const { solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado } = req.body;
+        if (!campoValido(solicitante) || !campoValido(tipo_misa) || !campoValido(intencion_principal) || !campoValido(fecha_hora)) {
+            return responderError(res, 400, 'Solicitante, tipo de Misa, intención y fecha son obligatorios');
+        }
+
         const fechaUtc = convertirHoraParroquialAUtc(fecha_hora);
         if (!fechaUtc) {
-            return res.status(400).json({ error: 'La fecha y hora de la Misa no son válidas' });
+            return responderError(res, 400, 'La fecha y hora de la Misa no son válidas');
+        }
+        if (await existeMisaEnHorario(fechaUtc, req.params.id)) {
+            return responderError(res, 409, 'Ya existe una Misa agendada para este mismo día y hora.');
         }
 
         const { data, error } = await supabase
             .from('misas')
-            .update({ solicitante, tipo_misa, intencion_principal, fecha_hora: fechaUtc.toISOString(), notas, estado })
+            .update({ solicitante: solicitante.trim(), tipo_misa: tipo_misa.trim(), intencion_principal: intencion_principal.trim(), fecha_hora: fechaUtc.toISOString(), notas: campoValido(notas) ? notas.trim() : '', estado: campoValido(estado) ? estado.trim() : 'Programada' })
             .eq('id', req.params.id)
             .select();
 
@@ -207,7 +256,7 @@ app.put('/api/misas/:id', async (req, res) => {
         res.status(200).json({ mensaje: 'Misa especial actualizada exitosamente', data });
     } catch (err) {
         console.error('Error al editar Misa especial:', err.message);
-        res.status(500).json({ error: 'Error al editar la Misa especial' });
+        responderError(res, 500, 'Error al editar la Misa especial');
     }
 });
 
@@ -223,8 +272,15 @@ app.delete('/api/misas/:id', async (req, res) => {
         res.status(200).json({ mensaje: 'Misa especial eliminada exitosamente' });
     } catch (err) {
         console.error('Error al eliminar Misa especial:', err.message);
-        res.status(500).json({ error: 'Error al eliminar la Misa especial' });
+        responderError(res, 500, 'Error al eliminar la Misa especial');
     }
+});
+
+// Última barrera para que una excepción no provoque una respuesta HTML ni detenga el servidor.
+app.use('/api', (err, req, res, next) => {
+    console.error('Error inesperado en la API:', err);
+    if (res.headersSent) return next(err);
+    responderError(res, 500, 'Ocurrió un error inesperado. Intenta nuevamente.');
 });
 
 // Iniciar el servidor
