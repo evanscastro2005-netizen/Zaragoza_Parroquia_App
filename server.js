@@ -144,6 +144,20 @@ app.post('/api/misas', async (req, res) => {
             });
         }
 
+        // Verificar que no exista otra Misa en la misma fecha y hora.
+        const { data: misaExistente, error: disponibilidadError } = await supabase
+            .from('misas')
+            .select('id')
+            .eq('fecha_hora', fecha_hora)
+            .limit(1);
+
+        if (disponibilidadError) throw disponibilidadError;
+        if (misaExistente.length > 0) {
+            return res.status(409).json({
+                error: 'Ya existe una Misa agendada para esa fecha y hora. Por favor, selecciona un horario diferente.'
+            });
+        }
+
         const { data, error } = await supabase
             .from('misas')
             .insert([{ solicitante, tipo_misa, intencion_principal, fecha_hora, notas, estado }])
