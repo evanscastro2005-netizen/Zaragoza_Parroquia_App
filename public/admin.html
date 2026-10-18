@@ -62,6 +62,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const principal = document.querySelector('.dashboard');
+    const encabezado = document.querySelector('.dashboard-heading');
+    const resumen = document.querySelector('.stats-row');
+    const intenciones = document.querySelector('.admin-panel');
+    const agenda = document.querySelector('.mass-schedule');
+    if (!principal || !encabezado || !resumen || !intenciones || !agenda) return;
+    const pestañas = document.createElement('div');
+    pestañas.className = 'secretary-tabs';
+    pestañas.setAttribute('role', 'tablist');
+    pestañas.innerHTML = '<button type="button" class="secretary-tab active" role="tab" aria-selected="true" aria-controls="modulo-intenciones">📋 Intenciones Recibidas</button><button type="button" class="secretary-tab" role="tab" aria-selected="false" aria-controls="modulo-misas">📅 Agenda de Misas Especiales</button>';
+    intenciones.id = 'modulo-intenciones';
+    agenda.id = 'modulo-misas';
+    principal.insertBefore(pestañas, encabezado);
+    const botones = [...pestañas.querySelectorAll('.secretary-tab')];
+    const mostrar = modulo => {
+        const esIntenciones = modulo === 'intenciones';
+        encabezado.hidden = !esIntenciones;
+        resumen.hidden = !esIntenciones;
+        intenciones.hidden = !esIntenciones;
+        agenda.hidden = esIntenciones;
+        botones.forEach((boton, indice) => { const activo = esIntenciones ? indice === 0 : indice === 1; boton.classList.toggle('active', activo); boton.setAttribute('aria-selected', activo); });
+        (esIntenciones ? intenciones : agenda).classList.remove('tab-content-enter');
+        requestAnimationFrame(() => (esIntenciones ? intenciones : agenda).classList.add('tab-content-enter'));
+    };
+    botones[0].addEventListener('click', () => mostrar('intenciones'));
+    botones[1].addEventListener('click', () => mostrar('misas'));
+    mostrar('intenciones');
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
     const listaIntenciones = document.getElementById('lista-intenciones');
     if (!listaIntenciones) return;
     const actualizarResumen = async () => {
