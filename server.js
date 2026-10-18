@@ -144,11 +144,18 @@ app.post('/api/misas', async (req, res) => {
             });
         }
 
-        // Verificar que no exista otra Misa en la misma fecha y hora.
+        // Verificar que no exista otra Misa dentro del mismo minuto agendado.
+        const inicioMinuto = new Date(`${fecha_hora}:00Z`);
+        if (Number.isNaN(inicioMinuto.getTime())) {
+            return res.status(400).json({ error: 'La fecha y hora de la Misa no son válidas' });
+        }
+        inicioMinuto.setUTCMinutes(inicioMinuto.getUTCMinutes() + 1);
+        const siguienteMinuto = inicioMinuto.toISOString().slice(0, 16);
         const { data: misaExistente, error: disponibilidadError } = await supabase
             .from('misas')
             .select('id')
-            .eq('fecha_hora', fecha_hora)
+            .gte('fecha_hora', fecha_hora)
+            .lt('fecha_hora', siguienteMinuto)
             .limit(1);
 
         if (disponibilidadError) throw disponibilidadError;
