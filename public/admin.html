@@ -62,6 +62,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const respuesta = await fetch('/api/intenciones');
+        if (!respuesta.ok) throw new Error('No se pudieron cargar las intenciones');
+        const intenciones = await respuesta.json();
+        const ahora = new Date();
+        const pad = valor => String(valor).padStart(2, '0');
+        const hoy = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`;
+        const mesActual = hoy.slice(0, 7);
+        document.getElementById('total-intenciones').textContent = intenciones.length;
+        document.getElementById('total-hoy').textContent = intenciones.filter(intencion => intencion.fecha === hoy).length;
+        document.getElementById('total-mes').textContent = intenciones.filter(intencion => (intencion.fecha || '').startsWith(mesActual)).length;
+    } catch (error) {
+        document.getElementById('total-hoy').textContent = '0';
+        document.getElementById('total-mes').textContent = '0';
+        console.error('No fue posible calcular el resumen:', error);
+    }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('#limpiar-filtros, #limpiar-filtros-misas').forEach(boton => boton.remove());
     const escapar = valor => String(valor || '').replace(/[&<>"']/g, caracter => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[caracter]));
     const registrosPorListado = [
