@@ -97,6 +97,41 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// URL corta para pegar directamente en OBS Studio.
+app.get('/overlay', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'overlay-intenciones.html'));
+});
+
+// Overlay para OBS: devuelve únicamente las intenciones de la fecha local
+// de Nicaragua. La fecha puede sobreescribirse con ?fecha=YYYY-MM-DD para
+// probar una celebración futura desde OBS.
+app.get('/api/overlay/intenciones', async (req, res) => {
+    try {
+        const fechaNicaragua = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Managua',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(new Date());
+        const fecha = /^\d{4}-\d{2}-\d{2}$/.test(req.query.fecha || '')
+            ? req.query.fecha
+            : fechaNicaragua;
+
+        const { data, error } = await supabase
+            .from('intenciones')
+            .select('id,nombre,tipo,descripcion,fecha,created_at')
+            .eq('fecha', fecha)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        res.set('Cache-Control', 'no-store');
+        res.json({ fecha, data });
+    } catch (err) {
+        console.error('Error al obtener intenciones del overlay:', err.message);
+        responderError(res, 500, 'Error al obtener las intenciones del día');
+    }
+});
+
 // --- API ENDPOINTS (RUTAS CON SUPABASE) ---
 
 // SQL recomendado para crear la tabla en Supabase:
