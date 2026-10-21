@@ -16,6 +16,8 @@
       color: #fff;
       font-family: Georgia, "Times New Roman", serif;
     }
+    body.preview { background: radial-gradient(circle at 50% 20%, #59636e 0, #252a31 58%, #111318 100%) !important; }
+    body.preview::after { content: "VISTA PREVIA · En OBS el fondo será transparente"; position: fixed; top: 18px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.68); font: 10px Arial, sans-serif; letter-spacing: .08em; }
     .overlay {
       position: fixed;
       right: 3.5vw;
@@ -75,6 +77,8 @@
       const lista = document.getElementById('lista');
       const estado = document.getElementById('estado');
       const params = new URLSearchParams(location.search);
+      const esVistaPrevia = params.get('preview') === '1';
+      if (esVistaPrevia) document.body.classList.add('preview');
       const url = `/api/overlay/intenciones${params.has('fecha') ? `?fecha=${encodeURIComponent(params.get('fecha'))}` : ''}`;
       const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, caracter => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[caracter]));
       let firma = '';
@@ -91,7 +95,7 @@
             lista.innerHTML = intenciones.length
               ? intenciones.map(item => `<li class="intention"><div>${escapar(item.nombre)}<span class="type">${escapar(item.tipo || 'Intención')}</span></div></li>`).join('')
               : '<li class="empty">No hay intenciones registradas para la Misa de hoy.</li>';
-            caja.classList.toggle('visible', intenciones.length > 0);
+            caja.classList.toggle('visible', intenciones.length > 0 || esVistaPrevia);
           }
           estado.textContent = `Misa del ${resultado.fecha} · Actualización automática activa`;
         } catch (error) {
