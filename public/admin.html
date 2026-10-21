@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const panel = document.querySelector('.admin-panel');
-  const nuevo = document.querySelector('.dashboard-heading .button-outline'); if (nuevo) { nuevo.href = '#registrar-intencion'; nuevo.textContent = '＋ Nueva intención'; }
+  const nuevo = document.querySelector('.dashboard-heading .button-outline'); nuevo?.remove();
   if (!panel || document.getElementById('form-intencion-secretaria')) return;
   const entrada = document.createElement('section');
   entrada.className = 'secretary-entry'; entrada.id = 'registrar-intencion';
