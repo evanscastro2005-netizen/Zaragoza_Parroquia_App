@@ -27,7 +27,9 @@
       const boton = document.createElement('button'); boton.className = 'theme-toggle'; boton.type = 'button'; boton.innerHTML = '<span class="theme-icon"></span><span class="theme-label"></span>'; contenedor.appendChild(boton);
       const actualizar = oscuro => { document.documentElement.classList.toggle('dark-mode', oscuro); boton.setAttribute('aria-label', oscuro ? 'Activar modo claro' : 'Activar modo oscuro'); boton.querySelector('.theme-icon').textContent = oscuro ? '☀' : '☾'; boton.querySelector('.theme-label').textContent = oscuro ? 'Modo claro' : 'Modo oscuro'; };
       actualizar(document.documentElement.classList.contains('dark-mode')); boton.addEventListener('click', () => { const oscuro = !document.documentElement.classList.contains('dark-mode'); localStorage.setItem('theme', oscuro ? 'dark' : 'light'); actualizar(oscuro); });
-      const urlOverlay = `${location.origin}/overlay`; const textoUrl = document.getElementById('overlay-url'); const botonCopiar = document.getElementById('copiar-overlay');
+      const origen = location.origin === 'null' ? 'http://localhost:3000' : location.origin;
+      const urlOverlay = `${origen}/overlay`;
+      const textoUrl = document.getElementById('overlay-url'); const botonCopiar = document.getElementById('copiar-overlay');
       if (textoUrl && botonCopiar) { textoUrl.textContent = urlOverlay; botonCopiar.addEventListener('click', async () => { try { await navigator.clipboard.writeText(urlOverlay); botonCopiar.textContent = 'URL copiada'; setTimeout(() => botonCopiar.textContent = 'Copiar URL para OBS', 1800); } catch { textoUrl.textContent = 'Copia manualmente: ' + urlOverlay; } }); }
     });
   </script>

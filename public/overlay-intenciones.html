@@ -50,28 +50,51 @@
       let firma = '';
       let intenciones = [];
       let indice = 0;
-      let rotador = null;
-      const DURACION = 6000;
+      let temporizador = null;
+      let generacion = 0;
+      const PALABRAS_POR_MINUTO = 150;
+      const TIEMPO_MINIMO = 5000;
+      const TIEMPO_MAXIMO = 18000;
 
       function pintar(item) {
         const [tipo, clase] = tipoVisible(item.tipo);
         carrusel.innerHTML = `<div class="intention"><span class="intention-mark">✦</span><div><div class="name">${escapar(item.nombre)}</div><span class="type ${clase}">${escapar(tipo)}</span></div></div>`;
       }
 
+      function calcularDuracion(item) {
+        const texto = `${item.nombre || ''} ${item.tipo || ''}`.trim();
+        const palabras = texto ? texto.split(/\s+/).length : 1;
+        const segundosLectura = (palabras / PALABRAS_POR_MINUTO) * 60;
+        return Math.min(TIEMPO_MAXIMO, Math.max(TIEMPO_MINIMO, Math.round((segundosLectura + 1.5) * 1000)));
+      }
+
       function cambiarIntencion() {
-        if (intenciones.length < 2) return;
+        if (intenciones.length < 2) { caja.classList.remove('visible'); temporizador = null; return; }
+        const miGeneracion = generacion;
         carrusel.classList.add('fading');
-        window.setTimeout(() => { indice = (indice + 1) % intenciones.length; pintar(intenciones[indice]); carrusel.classList.remove('fading'); }, 800);
+        window.setTimeout(() => {
+          if (miGeneracion !== generacion) return;
+          indice = (indice + 1) % intenciones.length;
+          pintar(intenciones[indice]);
+          carrusel.classList.remove('fading');
+          programarSiguiente();
+        }, 800);
+      }
+
+      function programarSiguiente() {
+        if (temporizador) window.clearTimeout(temporizador);
+        temporizador = window.setTimeout(cambiarIntencion, calcularDuracion(intenciones[indice]));
       }
 
       function iniciarCarrusel(nuevas) {
-        if (rotador) window.clearInterval(rotador);
+        if (temporizador) window.clearTimeout(temporizador);
+        generacion += 1;
         intenciones = nuevas;
         indice = 0;
         if (!intenciones.length) { carrusel.innerHTML = ''; caja.classList.toggle('visible', esVistaPrevia); return; }
         pintar(intenciones[indice]);
         caja.classList.add('visible');
-        if (intenciones.length > 1) rotador = window.setInterval(cambiarIntencion, DURACION);
+        programarSiguiente();
       }
 
       async function actualizar() {
