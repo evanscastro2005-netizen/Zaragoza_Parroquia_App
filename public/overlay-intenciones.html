@@ -8,108 +8,70 @@
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; }
-    body {
-      background: transparent !important;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      color: #fff;
-      font-family: Georgia, "Times New Roman", serif;
-    }
-    body.preview { background: radial-gradient(circle at 50% 20%, #59636e 0, #252a31 58%, #111318 100%) !important; }
-    body.preview::after { content: "VISTA PREVIA · En OBS el fondo será transparente"; position: fixed; top: 18px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.68); font: 10px Arial, sans-serif; letter-spacing: .08em; }
-    .overlay {
-      position: fixed;
-      right: 3.5vw;
-      bottom: 4.5vh;
-      width: min(720px, 92vw);
-      padding: 18px 26px 20px;
-      overflow: hidden;
-      border: 1px solid #d8b15c;
-      border-radius: 5px;
-      background: rgba(24, 22, 22, .85);
-      box-shadow: 0 5px 20px rgba(0, 0, 0, .42), inset 0 0 0 1px rgba(216, 177, 92, .12);
-      opacity: 0;
-      transform: translateY(12px);
-      transition: opacity .35s ease, transform .35s ease;
-    }
+    body { margin: 0; padding: 0; overflow: hidden; background: transparent !important; color: #fff; font-family: Georgia, "Times New Roman", serif; }
+    body.preview { background: radial-gradient(circle at 50% 20%, #5b626c 0, #292d34 58%, #111318 100%) !important; }
+    .overlay { position: fixed; right: 3.6vw; bottom: 5vh; width: min(650px, 90vw); padding: 20px 28px 22px; overflow: hidden; border: 1px solid #D4AF37; border-radius: 8px; background: rgba(45, 12, 20, 0.88); box-shadow: 0 8px 26px rgba(0,0,0,.42), inset 0 0 22px rgba(212,175,55,.06); opacity: 0; transform: translateY(12px); transition: opacity .8s ease-in-out, transform .8s ease-in-out; }
     .overlay.visible { opacity: 1; transform: translateY(0); }
-    .heading {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 0 0 11px;
-      color: #e5c77c;
-      font-size: clamp(16px, 1.7vw, 25px);
-      font-weight: 700;
-      letter-spacing: .08em;
-      line-height: 1.15;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, .8);
-    }
-    .heading::before { content: "✦"; color: #f0d58a; font-size: .85em; }
-    .list { margin: 0; padding: 0; list-style: none; }
-    .intention {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 10px;
-      padding: 8px 0;
-      border-top: 1px solid rgba(216, 177, 92, .35);
-      font-size: clamp(17px, 2vw, 29px);
-      line-height: 1.22;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, .8);
-    }
-    .intention::before { content: "•"; color: #e5c77c; }
-    .type { display: block; margin-top: 3px; color: #e5c77c; font: 600 clamp(11px, 1.1vw, 15px)/1.2 Arial, sans-serif; letter-spacing: .04em; text-transform: uppercase; }
-    .empty { color: #eee; font-size: clamp(16px, 1.6vw, 22px); }
-    .status { margin-top: 10px; color: rgba(255,255,255,.58); font: 10px Arial, sans-serif; letter-spacing: .05em; }
-    @media (max-width: 650px) { .overlay { right: 2vw; bottom: 3vh; padding: 14px 17px; } }
+    .heading { display: flex; align-items: center; gap: 12px; margin: 0; color: #D4AF37; font: 600 clamp(16px,1.7vw,24px)/1.15 Cinzel, Georgia, "Times New Roman", serif; letter-spacing: .08em; text-shadow: 2px 2px 4px rgba(0,0,0,.8); }
+    .heading img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(1px 2px 2px rgba(0,0,0,.7)); }
+    .heading-rule { width: 100%; height: 1px; margin: 13px 0 11px; background: linear-gradient(90deg, rgba(212,175,55,.9), rgba(212,175,55,.12)); }
+    .carousel { min-height: 58px; opacity: 1; transition: opacity .8s ease-in-out; }
+    .carousel.fading { opacity: 0; }
+    .intention { display: flex; align-items: center; gap: 11px; min-height: 58px; text-shadow: 2px 2px 4px rgba(0,0,0,.8); }
+    .intention-mark { color: #D4AF37; font-size: 25px; line-height: 1; }
+    .name { color: #fff; font: 600 clamp(20px,2.2vw,32px)/1.2 Cinzel, Georgia, "Times New Roman", serif; }
+    .type { display: inline-block; margin-top: 7px; padding: 4px 9px; border: 1px solid rgba(212,175,55,.7); border-radius: 999px; color: #f0d98b; background: rgba(212,175,55,.1); font: 600 10px/1.1 Arial, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+    .type.salud { color: #c9e1c6; border-color: rgba(137,181,126,.75); background: rgba(66,107,63,.24); }
+    @media (max-width: 650px) { .overlay { right: 2vw; bottom: 3vh; padding: 16px 19px 18px; } .heading img { width: 28px; height: 28px; } .heading { letter-spacing: .05em; } }
   </style>
 </head>
 <body>
   <section class="overlay" id="overlay" aria-live="polite">
-    <h1 class="heading">INTENCIONES DE LA SANTA MISA</h1>
-    <ul class="list" id="lista"><li class="empty">Cargando intenciones...</li></ul>
-    <div class="status" id="estado">Actualización automática activa</div>
+    <h1 class="heading"><img src="/assets/logo.png" alt=""><span>INTENCIONES DE LA SANTA MISA</span></h1>
+    <div class="heading-rule" aria-hidden="true"></div>
+    <div class="carousel" id="carrusel"></div>
   </section>
   <script>
     (() => {
       const caja = document.getElementById('overlay');
-      const lista = document.getElementById('lista');
-      const estado = document.getElementById('estado');
+      const carrusel = document.getElementById('carrusel');
       const params = new URLSearchParams(location.search);
       const esVistaPrevia = params.get('preview') === '1';
       if (esVistaPrevia) document.body.classList.add('preview');
       const url = `/api/overlay/intenciones${params.has('fecha') ? `?fecha=${encodeURIComponent(params.get('fecha'))}` : ''}`;
       const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, caracter => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[caracter]));
+      const tipoVisible = valor => {
+        const tipo = String(valor || '').toLowerCase();
+        if (tipo.includes('salud')) return ['SALUD / INTENCIÓN', 'salud'];
+        if (tipo.includes('gracia')) return ['ACCIÓN DE GRACIAS', 'gracias'];
+        if (tipo.includes('difunt') || tipo.includes('fallec')) return ['DIFUNTO', 'difunto'];
+        return [String(valor || 'INTENCIÓN').toUpperCase(), 'general'];
+      };
       let firma = '';
-      let intencionesActuales = [];
+      let intenciones = [];
       let indice = 0;
-      let temporizador = null;
-      const DURACION_INTENCION = 8000;
+      let rotador = null;
+      const DURACION = 6000;
 
-      function ocultarCarrusel() {
-        if (temporizador) { clearTimeout(temporizador); temporizador = null; }
-        caja.classList.remove('visible');
+      function pintar(item) {
+        const [tipo, clase] = tipoVisible(item.tipo);
+        carrusel.innerHTML = `<div class="intention"><span class="intention-mark">✦</span><div><div class="name">${escapar(item.nombre)}</div><span class="type ${clase}">${escapar(tipo)}</span></div></div>`;
       }
 
-      function mostrarSiguiente() {
-        if (indice >= intencionesActuales.length) { ocultarCarrusel(); return; }
-        const item = intencionesActuales[indice];
-        lista.innerHTML = `<li class="intention"><div>${escapar(item.nombre)}<span class="type">${escapar(item.tipo || 'Intención')}</span></div></li>`;
-        caja.classList.add('visible');
-        indice += 1;
-        temporizador = setTimeout(mostrarSiguiente, DURACION_INTENCION);
+      function cambiarIntencion() {
+        if (intenciones.length < 2) return;
+        carrusel.classList.add('fading');
+        window.setTimeout(() => { indice = (indice + 1) % intenciones.length; pintar(intenciones[indice]); carrusel.classList.remove('fading'); }, 800);
       }
 
-      function iniciarCarrusel(intenciones) {
-        if (temporizador) clearTimeout(temporizador);
-        intencionesActuales = intenciones;
+      function iniciarCarrusel(nuevas) {
+        if (rotador) window.clearInterval(rotador);
+        intenciones = nuevas;
         indice = 0;
-        if (intencionesActuales.length) mostrarSiguiente();
-        else {
-          lista.innerHTML = '<li class="empty">No hay intenciones registradas para la Misa de hoy.</li>';
-          caja.classList.toggle('visible', esVistaPrevia);
-        }
+        if (!intenciones.length) { carrusel.innerHTML = ''; caja.classList.toggle('visible', esVistaPrevia); return; }
+        pintar(intenciones[indice]);
+        caja.classList.add('visible');
+        if (intenciones.length > 1) rotador = window.setInterval(cambiarIntencion, DURACION);
       }
 
       async function actualizar() {
@@ -117,24 +79,14 @@
           const respuesta = await fetch(url, { cache: 'no-store' });
           if (!respuesta.ok) throw new Error('Respuesta no disponible');
           const resultado = await respuesta.json();
-          const intenciones = Array.isArray(resultado.data) ? resultado.data : [];
-          const nuevaFirma = JSON.stringify(intenciones);
-          if (nuevaFirma !== firma) {
-            firma = nuevaFirma;
-            lista.innerHTML = intenciones.length
-              ? intenciones.map(item => `<li class="intention"><div>${escapar(item.nombre)}<span class="type">${escapar(item.tipo || 'Intención')}</span></div></li>`).join('')
-              : '<li class="empty">No hay intenciones registradas para la Misa de hoy.</li>';
-            caja.classList.toggle('visible', intenciones.length > 0 || esVistaPrevia);
-            iniciarCarrusel(intenciones);
-          }
-          estado.textContent = `Misa del ${resultado.fecha} · Actualización automática activa`;
-        } catch (error) {
-          estado.textContent = 'Esperando conexión con el servidor…';
-        }
+          const nuevas = Array.isArray(resultado.data) ? resultado.data : [];
+          const nuevaFirma = JSON.stringify(nuevas);
+          if (nuevaFirma !== firma) { firma = nuevaFirma; iniciarCarrusel(nuevas); }
+        } catch (_) { /* El overlay permanece estable si una consulta falla. */ }
       }
 
       actualizar();
-      setInterval(actualizar, 7000);
+      window.setInterval(actualizar, 7000);
     })();
   </script>
 </body>
