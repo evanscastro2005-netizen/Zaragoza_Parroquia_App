@@ -41,6 +41,19 @@ const sanitizarEntrada = (valor) => {
 
 const campoValido = (valor) => typeof valor === 'string' && valor.trim().length > 0;
 const responderError = (res, status, message) => res.status(status).json({ success: false, message, error: message });
+const claveDuplicado = valor => String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
+
+const existeIntencionDuplicada = async (nombre, tipo, idExcluir = null) => {
+    const { data, error } = await supabase.from('intenciones').select('id,nombre,tipo');
+    if (error) throw error;
+    return data.some(item => item.id !== idExcluir && claveDuplicado(item.nombre) === claveDuplicado(nombre) && claveDuplicado(item.tipo) === claveDuplicado(tipo));
+};
+
+const existeMisaDuplicada = async (intencionPrincipal, tipoMisa, idExcluir = null) => {
+    const { data, error } = await supabase.from('misas').select('id,intencion_principal,tipo_misa');
+    if (error) throw error;
+    return data.some(item => item.id !== idExcluir && claveDuplicado(item.intencion_principal) === claveDuplicado(intencionPrincipal) && claveDuplicado(item.tipo_misa) === claveDuplicado(tipoMisa));
+};
 
 const existeMisaEnHorario = async (fechaUtc, idExcluir = null) => {
     const siguienteMinuto = new Date(fechaUtc.getTime() + 60 * 1000);
@@ -122,6 +135,9 @@ app.post('/api/intenciones', async (req, res) => {
         if (!campoValido(nombre) || !campoValido(tipo) || !campoValido(fecha)) {
             return responderError(res, 400, 'Nombre, tipo y fecha son obligatorios y no pueden estar vacíos');
         }
+        if (await existeIntencionDuplicada(nombre, tipo)) {
+            return responderError(res, 409, 'Ya existe una intención con ese nombre y tipo. Puedes registrarla nuevamente si corresponde a otro tipo de intención.');
+        }
 
         const { data, error } = await supabase
             .from('intenciones')
@@ -157,6 +173,9 @@ app.put('/api/intenciones/:id', async (req, res) => {
         const { nombre, tipo, descripcion, fecha } = req.body;
         if (!campoValido(nombre) || !campoValido(tipo) || !campoValido(fecha)) {
             return responderError(res, 400, 'Nombre, tipo y fecha son obligatorios y no pueden estar vacíos');
+        }
+        if (await existeIntencionDuplicada(nombre, tipo, req.params.id)) {
+            return responderError(res, 409, 'Ya existe otra intención con ese nombre y tipo. Puedes usarla si corresponde a otro tipo de intención.');
         }
 
         const { data, error } = await supabase
@@ -211,6 +230,9 @@ app.post('/api/misas', async (req, res) => {
         if (!fechaUtc) {
             return responderError(res, 400, 'La fecha y hora de la Misa no son válidas');
         }
+        if (await existeMisaDuplicada(intencion_principal, tipo_misa)) {
+            return responderError(res, 409, 'Ya existe una Misa privada para ese nombre y tipo de Misa. Puedes registrarla si corresponde a otro tipo de Misa.');
+        }
 
         // Verificar fecha y hora exactas antes de insertar.
         if (await existeMisaEnHorario(fechaUtc)) {
@@ -241,6 +263,9 @@ app.put('/api/misas/:id', async (req, res) => {
         const fechaUtc = convertirHoraParroquialAUtc(fecha_hora);
         if (!fechaUtc) {
             return responderError(res, 400, 'La fecha y hora de la Misa no son válidas');
+        }
+        if (await existeMisaDuplicada(intencion_principal, tipo_misa, req.params.id)) {
+            return responderError(res, 409, 'Ya existe otra Misa privada para ese nombre y tipo de Misa. Puedes usarla si corresponde a otro tipo de Misa.');
         }
         if (await existeMisaEnHorario(fechaUtc, req.params.id)) {
             return responderError(res, 409, 'Ya existe una Misa agendada para este mismo día y hora.');
