@@ -416,3 +416,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.querySelector('.print-header')) return;
+  const encabezado = document.createElement('div'); encabezado.className = 'print-header'; encabezado.innerHTML = '<div class="print-brand"><img src="assets/logo.png" alt="Logo parroquial"><div><strong>Parroquia Nuestra Señora del Pilar de Zaragoza</strong><span>León - Nicaragua</span></div></div><div class="print-title">Intenciones parroquiales</div>';
+  const pie = document.createElement('div'); pie.className = 'print-footer'; pie.textContent = 'Secretaría Parroquial';
+  const panel = document.querySelector('.admin-panel'); if (panel) { panel.parentNode.insertBefore(encabezado, panel); panel.parentNode.insertBefore(pie, panel.nextSibling); }
+  const imprimir = document.getElementById('imprimir-intenciones'); const tipo = document.getElementById('filtro-tipo'); const titulo = encabezado.querySelector('.print-title');
+  const actualizarTitulo = () => { titulo.textContent = tipo?.value ? `Intenciones de ${tipo.value}` : 'Intenciones parroquiales — Todos los tipos'; };
+  imprimir?.addEventListener('click', actualizarTitulo); window.addEventListener('beforeprint', actualizarTitulo);
+});
+</script>
