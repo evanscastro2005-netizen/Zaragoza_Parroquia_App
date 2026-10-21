@@ -394,3 +394,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }).observe(mensaje, { attributes: true, attributeFilter: ['class'] });
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const panel = document.querySelector('.admin-panel');
+  const nuevo = document.querySelector('.dashboard-heading .button-outline'); if (nuevo) { nuevo.href = '#registrar-intencion'; nuevo.textContent = '＋ Nueva intención'; }
+  if (!panel || document.getElementById('form-intencion-secretaria')) return;
+  const entrada = document.createElement('section');
+  entrada.className = 'secretary-entry'; entrada.id = 'registrar-intencion';
+  entrada.innerHTML = '<div class="section-heading"><div><p class="eyebrow">Secretaría · Registro</p><h2>Registrar una intención</h2><p class="muted">Anota la solicitud para incorporarla al listado parroquial.</p></div></div><form id="form-intencion-secretaria" class="form-card"><div class="form-grid"><div class="field"><label for="nombre-secretaria">Nombre completo <span>*</span></label><input id="nombre-secretaria" name="nombre" required placeholder="Nombre de la persona o familia"></div><div class="field"><label for="tipo-secretaria">Tipo de intención <span>*</span></label><select id="tipo-secretaria" name="tipo" required><option value="" disabled selected>Selecciona una opción</option><option>Difunto</option><option>Salud</option><option>Acción de Gracias</option></select></div><div class="field"><label for="fecha-secretaria">Fecha deseada <span>*</span></label><input id="fecha-secretaria" name="fecha" type="date" required></div></div><div class="form-footer"><p><span class="required-mark">*</span> Campos obligatorios</p><button class="button button-primary" type="submit">Guardar intención</button></div></form>';
+  panel.parentNode.insertBefore(entrada, panel);
+  const fecha = entrada.querySelector('#fecha-secretaria'); const hoy = new Date(); fecha.min = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+  entrada.querySelector('form').addEventListener('submit', async evento => { evento.preventDefault(); const formulario = evento.currentTarget; const boton = formulario.querySelector('button'); boton.disabled = true; boton.textContent = 'Guardando...'; try { const respuesta = await fetch('/api/intenciones', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...Object.fromEntries(new FormData(formulario)), descripcion:''})}); const datos = await respuesta.json(); if (!respuesta.ok) throw new Error(datos.error || datos.message || 'No se pudo guardar la intención'); formulario.reset(); window.mostrarAvisoParroquial('La intención fue registrada correctamente.'); window.location.reload(); } catch (error) { boton.disabled = false; boton.textContent = 'Guardar intención'; window.mostrarAvisoParroquial(error.message); } });
+});
+</script>
