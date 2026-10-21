@@ -407,3 +407,12 @@ document.addEventListener('DOMContentLoaded', () => {
   entrada.querySelector('form').addEventListener('submit', async evento => { evento.preventDefault(); const formulario = evento.currentTarget; const boton = formulario.querySelector('button'); boton.disabled = true; boton.textContent = 'Guardando...'; try { const respuesta = await fetch('/api/intenciones', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...Object.fromEntries(new FormData(formulario)), descripcion:''})}); const datos = await respuesta.json(); if (!respuesta.ok) throw new Error(datos.error || datos.message || 'No se pudo guardar la intención'); formulario.reset(); window.mostrarAvisoParroquial('La intención fue registrada correctamente.'); window.location.reload(); } catch (error) { boton.disabled = false; boton.textContent = 'Guardar intención'; window.mostrarAvisoParroquial(error.message); } });
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const pestañas = document.querySelectorAll('.secretary-tab');
+  if (pestañas.length >= 2) {
+    pestañas[0].textContent = 'Registrar intenciones';
+    pestañas[1].textContent = 'Agendar Misas';
+  }
+});
+</script>
