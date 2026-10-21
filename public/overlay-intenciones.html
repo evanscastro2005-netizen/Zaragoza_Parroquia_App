@@ -82,6 +82,35 @@
       const url = `/api/overlay/intenciones${params.has('fecha') ? `?fecha=${encodeURIComponent(params.get('fecha'))}` : ''}`;
       const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, caracter => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[caracter]));
       let firma = '';
+      let intencionesActuales = [];
+      let indice = 0;
+      let temporizador = null;
+      const DURACION_INTENCION = 8000;
+
+      function ocultarCarrusel() {
+        if (temporizador) { clearTimeout(temporizador); temporizador = null; }
+        caja.classList.remove('visible');
+      }
+
+      function mostrarSiguiente() {
+        if (indice >= intencionesActuales.length) { ocultarCarrusel(); return; }
+        const item = intencionesActuales[indice];
+        lista.innerHTML = `<li class="intention"><div>${escapar(item.nombre)}<span class="type">${escapar(item.tipo || 'Intención')}</span></div></li>`;
+        caja.classList.add('visible');
+        indice += 1;
+        temporizador = setTimeout(mostrarSiguiente, DURACION_INTENCION);
+      }
+
+      function iniciarCarrusel(intenciones) {
+        if (temporizador) clearTimeout(temporizador);
+        intencionesActuales = intenciones;
+        indice = 0;
+        if (intencionesActuales.length) mostrarSiguiente();
+        else {
+          lista.innerHTML = '<li class="empty">No hay intenciones registradas para la Misa de hoy.</li>';
+          caja.classList.toggle('visible', esVistaPrevia);
+        }
+      }
 
       async function actualizar() {
         try {
@@ -96,6 +125,7 @@
               ? intenciones.map(item => `<li class="intention"><div>${escapar(item.nombre)}<span class="type">${escapar(item.tipo || 'Intención')}</span></div></li>`).join('')
               : '<li class="empty">No hay intenciones registradas para la Misa de hoy.</li>';
             caja.classList.toggle('visible', intenciones.length > 0 || esVistaPrevia);
+            iniciarCarrusel(intenciones);
           }
           estado.textContent = `Misa del ${resultado.fecha} · Actualización automática activa`;
         } catch (error) {
