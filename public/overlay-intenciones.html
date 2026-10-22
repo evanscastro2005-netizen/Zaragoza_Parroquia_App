@@ -5,102 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intenciones de la Santa Misa</title>
   <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; }
-    body { margin: 0; overflow: hidden; background: transparent !important; color: #fff; font-family: Georgia, "Times New Roman", serif; }
-    body.preview { background: radial-gradient(circle at 50% 20%, #5b626c 0, #292d34 58%, #111318 100%) !important; }
-    .overlay { position: fixed; right: 3.6vw; bottom: 5vh; width: min(650px, 90vw); padding: 20px 28px 22px; overflow: hidden; border: 1px solid rgba(212,175,55,.95); border-radius: 8px; background: rgba(68,18,30,.9); box-shadow: 0 8px 26px rgba(0,0,0,.42), inset 0 0 22px rgba(212,175,55,.06); opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .8s ease-in-out, transform .8s ease-in-out, visibility 0s linear .8s; }
-    .overlay.visible { opacity: 1; visibility: visible; transform: translateY(0); transition: opacity .8s ease-in-out, transform .8s ease-in-out, visibility 0s linear 0s; }
-    .heading { display: flex; align-items: center; gap: 12px; margin: 0; color: #d4af37; font: 600 clamp(16px,1.7vw,24px)/1.15 Cinzel, Georgia, "Times New Roman", serif; letter-spacing: .08em; text-shadow: 2px 2px 4px rgba(0,0,0,.8); }
-    .heading img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(1px 2px 2px rgba(0,0,0,.7)); }
-    .heading-rule { width: 100%; height: 1px; margin: 13px 0 11px; background: linear-gradient(90deg, rgba(212,175,55,.9), rgba(212,175,55,.12)); }
-    .carousel { min-height: 58px; }
-    .intention { display: flex; align-items: center; gap: 11px; min-height: 58px; text-shadow: 2px 2px 4px rgba(0,0,0,.8); }
-    .intention-mark { color: #d4af37; font-size: 25px; line-height: 1; }
-    .name { color: #fff; font: 600 clamp(20px,2.2vw,32px)/1.2 Cinzel, Georgia, "Times New Roman", serif; }
-    .type { display: inline-block; margin-top: 7px; padding: 4px 9px; border: 1px solid rgba(212,175,55,.7); border-radius: 999px; color: #f0d98b; background: rgba(212,175,55,.1); font: 600 10px/1.1 Arial, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
-    .type.salud { color: #c9e1c6; border-color: rgba(137,181,126,.75); background: rgba(66,107,63,.24); }
-    @media (max-width:650px) { .overlay { right: 2vw; bottom: 3vh; padding: 16px 19px 18px; } .heading img { width: 28px; height: 28px; } .heading { letter-spacing: .05em; } }
+    :root{color-scheme:dark}*{box-sizing:border-box}html,body{width:100%;height:100%}
+    body{margin:0;overflow:hidden;background:transparent!important;color:#fff;font-family:Georgia,"Times New Roman",serif}
+    body.preview{background:radial-gradient(circle at 50% 20%,#5b626c 0,#292d34 58%,#111318 100%)!important}
+    .overlay{position:fixed;right:3.6vw;bottom:5vh;width:min(650px,90vw);padding:20px 28px 22px;overflow:hidden;border:1px solid rgba(212,175,55,.95);border-radius:8px;background:rgba(68,18,30,.9);box-shadow:0 8px 26px rgba(0,0,0,.42),inset 0 0 22px rgba(212,175,55,.06);opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .8s ease-in-out,transform .8s ease-in-out,visibility 0s linear .8s}
+    .overlay.visible{opacity:1;visibility:visible;transform:translateY(0);transition:opacity .8s ease-in-out,transform .8s ease-in-out,visibility 0s linear 0s}
+    .heading{display:flex;align-items:center;gap:12px;margin:0;color:#d4af37;font:600 clamp(16px,1.7vw,24px)/1.15 Cinzel,Georgia,"Times New Roman",serif;letter-spacing:.08em;text-shadow:2px 2px 4px rgba(0,0,0,.8)}
+    .heading img{width:34px;height:34px;object-fit:contain;filter:drop-shadow(1px 2px 2px rgba(0,0,0,.7))}.heading-rule{width:100%;height:1px;margin:13px 0 11px;background:linear-gradient(90deg,rgba(212,175,55,.9),rgba(212,175,55,.12))}
+    .carousel{min-height:58px}.intention{display:flex;align-items:center;gap:11px;min-height:58px;text-shadow:2px 2px 4px rgba(0,0,0,.8)}.intention-mark{color:#d4af37;font-size:25px;line-height:1}.name{color:#fff;font:600 clamp(20px,2.2vw,32px)/1.2 Cinzel,Georgia,"Times New Roman",serif}.type{display:inline-block;margin-top:7px;padding:4px 9px;border:1px solid rgba(212,175,55,.7);border-radius:999px;color:#f0d98b;background:rgba(212,175,55,.1);font:600 10px/1.1 Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase}.type.salud{color:#c9e1c6;border-color:rgba(137,181,126,.75);background:rgba(66,107,63,.24)}
+    @media(max-width:650px){.overlay{right:2vw;bottom:3vh;padding:16px 19px 18px}.heading img{width:28px;height:28px}.heading{letter-spacing:.05em}}
   </style>
 </head>
 <body>
   <section class="overlay" id="overlay" aria-live="polite">
     <h1 class="heading"><img src="/assets/logo.png" alt=""><span>INTENCIONES DE LA SANTA MISA</span></h1>
-    <div class="heading-rule" aria-hidden="true"></div>
-    <div class="carousel" id="carrusel"></div>
+    <div class="heading-rule" aria-hidden="true"></div><div class="carousel" id="carrusel"></div>
   </section>
   <script>
-    (() => {
-      const caja = document.getElementById('overlay');
-      const carrusel = document.getElementById('carrusel');
-      const params = new URLSearchParams(location.search);
-      const esVistaPrevia = params.get('preview') === '1';
-      if (esVistaPrevia) document.body.classList.add('preview');
-      const url = `/api/overlay/intenciones${params.has('fecha') ? `?fecha=${encodeURIComponent(params.get('fecha'))}` : ''}`;
-      const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, caracter => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[caracter]));
-      const tipoVisible = valor => {
-        const tipo = String(valor || '').toLowerCase();
-        if (tipo.includes('salud')) return ['SALUD / INTENCIÓN', 'salud'];
-        if (tipo.includes('gracia')) return ['ACCIÓN DE GRACIAS', 'gracias'];
-        if (tipo.includes('difunt') || tipo.includes('fallec')) return ['DIFUNTO', 'difunto'];
-        return [String(valor || 'INTENCIÓN').toUpperCase(), 'general'];
-      };
-      let intenciones = [];
-      let indice = 0;
-      let temporizador = null;
-      let firma = '';
-      let pendientes = null;
-      let actualizando = false;
-      const DURACION_INTENCION = 7000;
-      const DURACION_TRANSICION = 800;
-
-      function pintar(item) {
-        const [tipo, clase] = tipoVisible(item.tipo);
-        carrusel.innerHTML = `<div class="intention"><span class="intention-mark">✦</span><div><div class="name">${escapar(item.nombre)}</div><span class="type ${clase}">${escapar(tipo)}</span></div></div>`;
-      }
-      function programarSiguiente() {
-        window.clearTimeout(temporizador);
-        temporizador = window.setTimeout(cambiarIntencion, DURACION_INTENCION);
-      }
-      function cambiarIntencion() {
-        if (!intenciones.length) return;
-        caja.classList.remove('visible');
-        temporizador = window.setTimeout(() => {
-          if (pendientes) { intenciones = pendientes; pendientes = null; indice = 0; }
-          else indice = (indice + 1) % intenciones.length;
-          if (!intenciones.length) { carrusel.innerHTML = ''; return; }
-          pintar(intenciones[indice]);
-          window.requestAnimationFrame(() => caja.classList.add('visible'));
-          programarSiguiente();
-        }, DURACION_TRANSICION);
-      }
-      function iniciarCarrusel(nuevas) {
-        window.clearTimeout(temporizador);
-        intenciones = nuevas;
-        indice = 0;
-        pendientes = null;
-        if (!intenciones.length) { carrusel.innerHTML = ''; caja.classList.toggle('visible', esVistaPrevia); return; }
-        pintar(intenciones[indice]);
-        window.requestAnimationFrame(() => caja.classList.add('visible'));
-        programarSiguiente();
-      }
-      async function actualizar() {
-        if (actualizando) return;
-        actualizando = true;
-        try {
-          const respuesta = await fetch(url, { cache: 'no-store' });
-          if (!respuesta.ok) throw new Error('Respuesta no disponible');
-          const resultado = await respuesta.json();
-          const nuevas = Array.isArray(resultado.data) ? resultado.data : [];
-          const firmaNueva = JSON.stringify(nuevas);
-          if (!firma) { firma = firmaNueva; iniciarCarrusel(nuevas); }
-          else if (firmaNueva !== firma) { firma = firmaNueva; pendientes = nuevas; }
-        } catch (_) { /* Mantener el último estado si Supabase falla temporalmente. */ }
-        finally { actualizando = false; }
-      }
-      actualizar();
-      window.setInterval(actualizar, 7000);
+    (()=>{const caja=document.getElementById('overlay'),carrusel=document.getElementById('carrusel'),params=new URLSearchParams(location.search),esVistaPrevia=params.get('preview')==='1';
+      if(esVistaPrevia)document.body.classList.add('preview');
+      const url=`/api/overlay/intenciones${params.has('fecha')?`?fecha=${encodeURIComponent(params.get('fecha'))}`:''}`,escapar=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+      const tipoVisible=v=>{const tipo=String(v||'').toLowerCase();if(tipo.includes('salud'))return['SALUD / INTENCIÓN','salud'];if(tipo.includes('gracia'))return['ACCIÓN DE GRACIAS','gracias'];if(tipo.includes('difunt')||tipo.includes('fallec'))return['DIFUNTO','difunto'];return[String(v||'INTENCIÓN').toUpperCase(),'general']};
+      let temporizador=null;const DURACION_INTENCION=7000,DURACION_TRANSICION=800;
+      function pintar(item){const[tipo,clase]=tipoVisible(item.tipo);carrusel.innerHTML=`<div class="intention"><span class="intention-mark">✦</span><div><div class="name">${escapar(item.nombre)}</div><span class="type ${clase}">${escapar(tipo)}</span></div></div>`}
+      function ejecutarSecuencia(intenciones){let indice=0;const mostrarSiguiente=()=>{if(indice>=intenciones.length){caja.classList.remove('visible');return}pintar(intenciones[indice]);window.requestAnimationFrame(()=>caja.classList.add('visible'));temporizador=window.setTimeout(()=>{caja.classList.remove('visible');temporizador=window.setTimeout(()=>{indice+=1;mostrarSiguiente()},DURACION_TRANSICION)},DURACION_INTENCION)};mostrarSiguiente()}
+      async function cargarUnaVez(){try{const respuesta=await fetch(url,{cache:'no-store'});if(!respuesta.ok)throw Error('Respuesta no disponible');const resultado=await respuesta.json(),intenciones=Array.isArray(resultado.data)?resultado.data:[];if(intenciones.length)ejecutarSecuencia(intenciones)}catch(_){/* El overlay permanece oculto si la consulta falla. */}}
+      cargarUnaVez();
     })();
   </script>
 </body>
