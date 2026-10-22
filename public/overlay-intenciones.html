@@ -10,8 +10,8 @@
     html, body { width: 100%; height: 100%; }
     body { margin: 0; padding: 0; overflow: hidden; background: transparent !important; color: #fff; font-family: Georgia, "Times New Roman", serif; }
     body.preview { background: radial-gradient(circle at 50% 20%, #5b626c 0, #292d34 58%, #111318 100%) !important; }
-    .overlay { position: fixed; right: 3.6vw; bottom: 5vh; width: min(650px, 90vw); padding: 20px 28px 22px; overflow: hidden; border: 1px solid #D4AF37; border-radius: 8px; background: rgba(45, 12, 20, 0.88); box-shadow: 0 8px 26px rgba(0,0,0,.42), inset 0 0 22px rgba(212,175,55,.06); opacity: 0; transform: translateY(12px); transition: opacity .8s ease-in-out, transform .8s ease-in-out; }
-    .overlay.visible { opacity: 1; transform: translateY(0); }
+    .overlay { position: fixed; right: 3.6vw; bottom: 5vh; width: min(650px, 90vw); padding: 20px 28px 22px; overflow: hidden; border: 1px solid #D4AF37; border-radius: 8px; background: rgba(45, 12, 20, 0.88); box-shadow: 0 8px 26px rgba(0,0,0,.42), inset 0 0 22px rgba(212,175,55,.06); opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity 1s ease-in-out, transform 1s ease-in-out, visibility 0s linear 1s; }
+    .overlay.visible { opacity: 1; visibility: visible; transform: translateY(0); transition: opacity 1s ease-in-out, transform 1s ease-in-out, visibility 0s linear 0s; }
     .heading { display: flex; align-items: center; gap: 12px; margin: 0; color: #D4AF37; font: 600 clamp(16px,1.7vw,24px)/1.15 Cinzel, Georgia, "Times New Roman", serif; letter-spacing: .08em; text-shadow: 2px 2px 4px rgba(0,0,0,.8); }
     .heading img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(1px 2px 2px rgba(0,0,0,.7)); }
     .heading-rule { width: 100%; height: 1px; margin: 13px 0 11px; background: linear-gradient(90deg, rgba(212,175,55,.9), rgba(212,175,55,.12)); }
@@ -52,38 +52,31 @@
       let indice = 0;
       let temporizador = null;
       let generacion = 0;
-      const PALABRAS_POR_MINUTO = 150;
-      const TIEMPO_MINIMO = 5000;
-      const TIEMPO_MAXIMO = 18000;
+      const DURACION_INTENCION = 7000;
+      const DURACION_TRANSICION = 1000;
 
       function pintar(item) {
         const [tipo, clase] = tipoVisible(item.tipo);
         carrusel.innerHTML = `<div class="intention"><span class="intention-mark">✦</span><div><div class="name">${escapar(item.nombre)}</div><span class="type ${clase}">${escapar(tipo)}</span></div></div>`;
       }
 
-      function calcularDuracion(item) {
-        const texto = `${item.nombre || ''} ${item.tipo || ''}`.trim();
-        const palabras = texto ? texto.split(/\s+/).length : 1;
-        const segundosLectura = (palabras / PALABRAS_POR_MINUTO) * 60;
-        return Math.min(TIEMPO_MAXIMO, Math.max(TIEMPO_MINIMO, Math.round((segundosLectura + 1.5) * 1000)));
-      }
-
-      function cambiarIntencion() {
-        if (intenciones.length < 2) { caja.classList.remove('visible'); temporizador = null; return; }
-        const miGeneracion = generacion;
-        carrusel.classList.add('fading');
-        window.setTimeout(() => {
+      function cambiarIntencion(miGeneracion) {
+        if (miGeneracion !== generacion) return;
+        caja.classList.remove('visible');
+        temporizador = window.setTimeout(() => {
           if (miGeneracion !== generacion) return;
-          indice = (indice + 1) % intenciones.length;
+          indice += 1;
+          if (indice >= intenciones.length) { temporizador = null; return; }
           pintar(intenciones[indice]);
-          carrusel.classList.remove('fading');
+          window.requestAnimationFrame(() => caja.classList.add('visible'));
           programarSiguiente();
-        }, 800);
+        }, DURACION_TRANSICION);
       }
 
       function programarSiguiente() {
         if (temporizador) window.clearTimeout(temporizador);
-        temporizador = window.setTimeout(cambiarIntencion, calcularDuracion(intenciones[indice]));
+        const miGeneracion = generacion;
+        temporizador = window.setTimeout(() => cambiarIntencion(miGeneracion), DURACION_INTENCION);
       }
 
       function iniciarCarrusel(nuevas) {
@@ -93,7 +86,7 @@
         indice = 0;
         if (!intenciones.length) { carrusel.innerHTML = ''; caja.classList.toggle('visible', esVistaPrevia); return; }
         pintar(intenciones[indice]);
-        caja.classList.add('visible');
+        window.requestAnimationFrame(() => caja.classList.add('visible'));
         programarSiguiente();
       }
 
