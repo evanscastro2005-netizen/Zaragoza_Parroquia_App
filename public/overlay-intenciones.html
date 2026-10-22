@@ -26,11 +26,12 @@
       if(esVistaPrevia)document.body.classList.add('preview');
       const url=`/api/overlay/intenciones${params.has('fecha')?`?fecha=${encodeURIComponent(params.get('fecha'))}`:''}`,escapar=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
       const tipoVisible=v=>{const tipo=String(v||'').toLowerCase();if(tipo.includes('salud'))return['SALUD / INTENCIÓN','salud'];if(tipo.includes('gracia'))return['ACCIÓN DE GRACIAS','gracias'];if(tipo.includes('difunt')||tipo.includes('fallec'))return['DIFUNTO','difunto'];return[String(v||'INTENCIÓN').toUpperCase(),'general']};
-      let temporizador=null;const DURACION_INTENCION=7000,DURACION_TRANSICION=800;
+      let temporizador=null,temporizadorConsulta=null,ultimaFirma=null,hasPlayed=false;const DURACION_INTENCION=7000,DURACION_TRANSICION=800,DURACION_CONSULTA=7000;
       function pintar(item){const[tipo,clase]=tipoVisible(item.tipo);carrusel.innerHTML=`<div class="intention"><span class="intention-mark">✦</span><div><div class="name">${escapar(item.nombre)}</div><span class="type ${clase}">${escapar(tipo)}</span></div></div>`}
-      function ejecutarSecuencia(intenciones){let indice=0;const mostrarSiguiente=()=>{if(indice>=intenciones.length){caja.classList.remove('visible');return}pintar(intenciones[indice]);window.requestAnimationFrame(()=>caja.classList.add('visible'));temporizador=window.setTimeout(()=>{caja.classList.remove('visible');temporizador=window.setTimeout(()=>{indice+=1;mostrarSiguiente()},DURACION_TRANSICION)},DURACION_INTENCION)};mostrarSiguiente()}
-      async function cargarUnaVez(){try{const respuesta=await fetch(url,{cache:'no-store'});if(!respuesta.ok)throw Error('Respuesta no disponible');const resultado=await respuesta.json(),intenciones=Array.isArray(resultado.data)?resultado.data:[];if(intenciones.length)ejecutarSecuencia(intenciones)}catch(_){/* El overlay permanece oculto si la consulta falla. */}}
-      cargarUnaVez();
+      function cancelarSecuencia(){window.clearTimeout(temporizador);caja.classList.remove('visible');temporizador=window.setTimeout(()=>{caja.style.display='none'},DURACION_TRANSICION)}
+      function ejecutarSecuencia(intenciones){window.clearTimeout(temporizador);caja.style.display='';let indice=0;const mostrarSiguiente=()=>{if(indice>=intenciones.length){cancelarSecuencia();return}pintar(intenciones[indice]);window.requestAnimationFrame(()=>caja.classList.add('visible'));temporizador=window.setTimeout(()=>{caja.classList.remove('visible');temporizador=window.setTimeout(()=>{indice+=1;mostrarSiguiente()},DURACION_TRANSICION)},DURACION_INTENCION)};mostrarSiguiente()}
+      async function consultarIntenciones(){try{const respuesta=await fetch(url,{cache:'no-store'});if(!respuesta.ok)throw Error('Respuesta no disponible');const resultado=await respuesta.json(),intenciones=Array.isArray(resultado.data)?resultado.data:[],firma=intenciones.map(item=>item.id).join('|');if(firma===ultimaFirma&&hasPlayed)return;ultimaFirma=firma;hasPlayed=true;if(intenciones.length)ejecutarSecuencia(intenciones);else cancelarSecuencia()}catch(_){/* El overlay conserva su estado si la consulta falla. */}finally{temporizadorConsulta=window.setTimeout(consultarIntenciones,DURACION_CONSULTA)}}
+      consultarIntenciones();
     })();
   </script>
 </body>
